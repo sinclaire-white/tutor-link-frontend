@@ -12,7 +12,7 @@ import {
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils'; // assuming you have cn from shadcn
+import { cn } from '@/lib/utils'; 
 
 const categories = ['Math', 'Science', 'English', 'History', 'Languages'];
 const navLinks = [
@@ -55,7 +55,7 @@ export function DesktopNav() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 4, scale: 0.97 }}
                 transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                className="grid w-[380px] sm:w-[420px] gap-2 p-4 md:w-[480px] lg:w-[520px] md:grid-cols-2"
+                className="grid w-95 sm:w-105 gap-2 p-4 md:w-120 lg:w-130 md:grid-cols-2"
               >
                 {categories.map((category) => (
                   <li key={category}>
