@@ -6,10 +6,10 @@ export function AuthButtons() {
   return (
     <>
       <Button variant="outline" asChild>
-        <Link href="/signup">Sign Up</Link>
+        <Link href="/sign-up">Sign Up</Link>
       </Button>
       <Button asChild>
-        <Link href="/signin">Sign In</Link>
+        <Link href="/sign-in">Sign In</Link>
       </Button>
     </>
   );

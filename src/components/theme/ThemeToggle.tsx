@@ -1,4 +1,3 @@
-// components/navbar/ThemeToggle.tsx
 'use client';
 
 import { useTheme } from 'next-themes';
@@ -7,17 +6,26 @@ import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
+
+  // If theme hasn't resolved yet (during hydration), show placeholder
+  if (!resolvedTheme) {
+    return (
+      <Button variant="ghost" size="icon" className="rounded-full" disabled>
+        <div className="h-5 w-5 animate-pulse bg-muted rounded-full" />
+      </Button>
+    );
+  }
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
       className="rounded-full"
     >
       <AnimatePresence mode="wait" initial={false}>
-        {theme === 'dark' ? (
+        {resolvedTheme === 'dark' ? (
           <motion.div
             key="sun"
             initial={{ y: 10, opacity: 0 }}
