@@ -57,11 +57,12 @@ export default function SignInPage() {
 
       if (result.error) {
         toast.error(result.error.message || "Invalid credentials");
+        
         return;
       }
 
       toast.success("Welcome back!");
-      router.push("/dashboard"); // or wherever you want to redirect
+      router.push("/dashboard");
       router.refresh(); // Refresh to update auth state
     } catch (error) {
       console.error("Sign-in error:", error);
