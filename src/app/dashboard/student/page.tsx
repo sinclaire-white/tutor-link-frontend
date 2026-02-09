@@ -1,9 +1,11 @@
 "use client";
 
 import { Suspense, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import TopTabs from '@/components/dashboard/TopTabs';
 import BookingCalendar from '@/components/dashboard/BookingCalendar';
 import Pagination from '@/components/dashboard/Pagination';
+import { useSession } from '@/providers/SessionProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,10 +26,34 @@ export default function StudentDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingPage, setBookingPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
+  const router = useRouter();
 
   useEffect(() => {
-    if (!apiBase) return;
+    const checkRole = async () => {
+      try {
+        const result = await authClient.getSession();
+        const sessionData = result?.data;
+        if (!sessionData?.user) {
+          router.push('/sign-in');
+          return;
+        }
+        // Redirect if user is not a student
+        if ((sessionData.user as any).role !== 'STUDENT') {
+          router.push(`/dashboard/${(sessionData.user as any).role?.toLowerCase() || 'student'}`);
+          return;
+        }
+        setLoading(false);
+      } catch (error) {
+        router.push('/sign-in');
+      }
+    };
+    checkRole();
+  }, [router]);
+
+  useEffect(() => {
+    if (!apiBase || loading) return;
 
     fetch(`${apiBase}/users/me`, { credentials: 'include' })
       .then((r) => r.json())
@@ -38,7 +64,7 @@ export default function StudentDashboard() {
       .then((r) => r.json())
       .then((data) => setBookings(data.data || []))
       .catch(() => {});
-  }, [apiBase]);
+  }, [apiBase, loading]);
 
   const bookingPageTotal = Math.max(1, Math.ceil((bookings?.length || 0) / 5));
 

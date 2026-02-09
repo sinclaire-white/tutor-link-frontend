@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import TopTabs from '@/components/dashboard/TopTabs';
 import ProfileForm from '@/components/dashboard/ProfileForm';
 import BookingCard from '@/components/dashboard/BookingCard';
@@ -8,6 +9,7 @@ import ReviewsList from '@/components/dashboard/ReviewsList';
 import ConfirmSheet from '@/components/dashboard/ConfirmSheet';
 import Pagination from '@/components/dashboard/Pagination';
 import BookingCalendar from '@/components/dashboard/BookingCalendar';
+import { authClient } from '@/lib/auth-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,10 +23,34 @@ export default function TutorDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookingPage, setBookingPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
+  const router = useRouter();
 
   useEffect(() => {
-    if (!apiBase) return;
+    const checkRole = async () => {
+      try {
+        const result = await authClient.getSession();
+        const sessionData = result?.data;
+        if (!sessionData?.user) {
+          router.push('/sign-in');
+          return;
+        }
+        // Redirect if user is not a tutor
+        if ((sessionData.user as any).role !== 'TUTOR') {
+          router.push(`/dashboard/${(sessionData.user as any).role?.toLowerCase() || 'student'}`);
+          return;
+        }
+        setLoading(false);
+      } catch (error) {
+        router.push('/sign-in');
+      }
+    };
+    checkRole();
+  }, [router]);
+
+  useEffect(() => {
+    if (!apiBase || loading) return;
     fetch(`${apiBase}/users/me`, { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => setProfile(d.data || d))
@@ -39,7 +65,7 @@ export default function TutorDashboard() {
           { id: 'b2', date: '2026-03-05 14:00', studentName: 'Bob', status: 'approved' },
         ]);
       });
-  }, [apiBase]);
+  }, [apiBase, loading]);
 
   async function handleAction(id: string, status: string) {
     setBookings((b) => b.map((x) => (x.id === id ? { ...x, status } : x)));

@@ -2,34 +2,50 @@
 'use client';
 
 import Link from 'next/link';
-import { LogOut } from 'lucide-react';
+import { LogOut, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-
-// Fake user data
-const fakeUser = {
-  name: 'John Doe',
-  email: 'john@example.com',
-  avatar: '/placeholder-avatar.jpg',
-};
-
-const dashboardLinks = [
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Upcoming Bookings', href: '/bookings' },
-  { label: 'Hire Tutors', href: '/hire' },
-  { label: 'Profile', href: '/profile' },
-];
+import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/providers/SessionProvider';
 
 export function UserDropdown() {
+  const { user, isLoading, refetchSession } = useSession();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await authClient.signOut();
+      // Refetch the session to update the context
+      await refetchSession();
+      // Redirect to home
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+      </Button>
+    );
+  }
+
+  const userName = user?.name || 'User';
+  const userEmail = user?.email || '';
+  const userAvatar = user?.image || '/placeholder-avatar.jpg';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={fakeUser.avatar || undefined} alt={fakeUser.name} />
-            <AvatarFallback>{fakeUser.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={userAvatar} alt={userName} />
+            <AvatarFallback>{userName.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -47,18 +63,19 @@ export function UserDropdown() {
         >
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{fakeUser.name}</p>
-              <p className="text-xs leading-none text-muted-foreground">{fakeUser.email}</p>
+              <p className="text-sm font-medium leading-none">{userName}</p>
+              {userEmail && <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {dashboardLinks.map((link) => (
-            <DropdownMenuItem key={link.label} asChild>
-              <Link href={link.href}>{link.label}</Link>
-            </DropdownMenuItem>
-          ))}
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard" className="cursor-pointer">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              <span>Dashboard</span>
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>

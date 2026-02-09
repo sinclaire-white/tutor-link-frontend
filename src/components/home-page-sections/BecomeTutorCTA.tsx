@@ -1,7 +1,36 @@
+'use client';
+
 import Link from "next/link";
 import { Button } from "../ui/button";
+import { useEffect, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 
 export function BecomeTutorCTA() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const result = await authClient.getSession();
+        const sessionData = result?.data;
+        if (sessionData?.user) {
+          setUser(sessionData.user);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  // Hide this section if user is already a tutor
+  if (!loading && user?.role === 'TUTOR') {
+    return null;
+  }
+
   return (
     <section className="py-16 md:py-20 bg-muted/40">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">

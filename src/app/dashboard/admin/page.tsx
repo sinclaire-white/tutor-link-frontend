@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import StatsCards from '@/components/dashboard/admin/StatsCards';
 import CategoryManager from '@/components/dashboard/admin/CategoryManager';
 import Pagination from '@/components/dashboard/Pagination';
+import { authClient } from '@/lib/auth-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,30 +23,54 @@ export default function AdminDashboard() {
 
   const [stats, setStats] = useState<any>(null);
   const [tutorsResult, setTutorsResult] = useState<any>({ items: [], total: 0, page: 1, perPage: 10 });
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    if (!apiBase) return;
+    const checkRole = async () => {
+      try {
+        const result = await authClient.getSession();
+        const sessionData = result?.data;
+        if (!sessionData?.user) {
+          router.push('/sign-in');
+          return;
+        }
+        // Redirect if user is not an admin
+        if ((sessionData.user as any).role !== 'ADMIN') {
+          router.push(`/dashboard/${(sessionData.user as any).role?.toLowerCase() || 'student'}`);
+          return;
+        }
+        setLoading(false);
+      } catch (error) {
+        router.push('/sign-in');
+      }
+    };
+    checkRole();
+  }, [router]);
+
+  useEffect(() => {
+    if (!apiBase || loading) return;
     fetch(`${apiBase}/admin/stats`, { credentials: 'include' })
       .then(r => r.json()).then(d => setStats(d.data || d)).catch(() => {});
-  }, []);
+  }, [loading]);
 
   useEffect(() => {
-    if (!apiBase) return;
+    if (!apiBase || loading) return;
     fetch(`${apiBase}/users?q=${encodeURIComponent(query)}&page=${usersPage}&perPage=${usersPerPage}`, { credentials: 'include' })
       .then(r => r.json()).then(d => setUsersResult(d.data || d)).catch(() => {});
-  }, [query, usersPage]);
+  }, [query, usersPage, loading]);
 
   useEffect(() => {
-    if (!apiBase) return;
+    if (!apiBase || loading) return;
     fetch(`${apiBase}/bookings?page=${bookingsPage}&perPage=${bookingsPerPage}`, { credentials: 'include' })
       .then(r => r.json()).then(d => setBookingsResult(d.data || d)).catch(() => {});
-  }, [bookingsPage]);
+  }, [bookingsPage, loading]);
 
   useEffect(() => {
-    if (!apiBase) return;
+    if (!apiBase || loading) return;
     fetch(`${apiBase}/tutors?approved=false&page=1&perPage=10`, { credentials: 'include' })
       .then(r => r.json()).then(d => setTutorsResult(d.data || d)).catch(() => {});
-  }, []);
+  }, [loading]);
 
   const users = usersResult.items || [];
   const bookings = bookingsResult.items || [];

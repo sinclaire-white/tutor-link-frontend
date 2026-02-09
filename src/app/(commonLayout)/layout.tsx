@@ -1,5 +1,5 @@
 import { Footer } from "@/components/footer/Footer";
-import { Navbar } from "@/components/navbar/Navbar";
+import { ClientNavbar } from "@/components/navbar/ClientNavbar";
 
 
 export default function CommonLayout({
@@ -9,7 +9,7 @@ export default function CommonLayout({
 }) {
   return (
     <div>
-     <Navbar isLoggedIn={false}/>
+     <ClientNavbar />
       <main className="flex-1">{children}</main>
       <Footer />
     </div>
