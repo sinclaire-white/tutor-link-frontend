@@ -39,7 +39,7 @@ export default function BookingCalendar({ bookings, year, month }: { bookings?: 
           const key = d.toISOString().slice(0,10);
           const list = byDate[key] || [];
           return (
-            <div key={key} className="min-h-[80px] border p-2 rounded">
+            <div key={key} className="min-h-20 border p-2 rounded">
               <div className="text-xs font-semibold">{d.getDate()}</div>
               <div className="mt-1 space-y-1">
                 {list.slice(0,3).map(b => (

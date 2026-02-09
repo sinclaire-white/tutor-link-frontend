@@ -23,7 +23,7 @@ import {
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 const signInSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
+  email: z.email("Please enter a valid email"),
   password: z.string().min(1, "Password is required"),
   rememberMe: z.boolean().optional(),
 });

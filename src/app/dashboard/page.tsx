@@ -1,13 +1,45 @@
-import Link from 'next/link';
+"use client";
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { authClient } from '@/lib/auth-client';
 
 export default function DashboardIndex() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const redirectToDashboard = async () => {
+      try {
+        const result = await authClient.getSession();
+        const session = result?.data;
+        
+        if (!session?.user) {
+          router.push('/sign-in');
+          return;
+        }
+
+        const userRole = ((session.user as any)?.role || 'STUDENT') as 'STUDENT' | 'TUTOR' | 'ADMIN';
+        const dashboardPath: Record<'STUDENT' | 'TUTOR' | 'ADMIN', string> = {
+          STUDENT: '/dashboard/student',
+          TUTOR: '/dashboard/tutor',
+          ADMIN: '/dashboard/admin',
+        };
+
+        router.push(dashboardPath[userRole] || '/dashboard/student');
+      } catch (error) {
+        console.error('Failed to get session:', error);
+        router.push('/sign-in');
+      }
+    };
+
+    redirectToDashboard();
+  }, [router]);
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">Choose Dashboard</h1>
-      <div className="grid grid-cols-3 gap-4">
-        <Link href="/dashboard/student" className="p-6 border rounded hover:shadow">Student Dashboard</Link>
-        <Link href="/dashboard/tutor" className="p-6 border rounded hover:shadow">Tutor Dashboard</Link>
-        <Link href="/dashboard/admin" className="p-6 border rounded hover:shadow">Admin Dashboard</Link>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Loading dashboard...</p>
       </div>
     </div>
   );
