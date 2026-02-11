@@ -1,5 +1,5 @@
-
-'use client'; 
+// components/navbar/DesktopNav.tsx
+'use client';
 
 import Link from 'next/link';
 import {
@@ -12,9 +12,10 @@ import {
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils'; 
+import { cn } from '@/lib/utils';
+import { useCategories } from '@/hooks/useCategories';
+import { Loader2 } from 'lucide-react';
 
-const categories = ['Math', 'Science', 'English', 'History', 'Languages'];
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'About', href: '/about' },
@@ -22,6 +23,8 @@ const navLinks = [
 ];
 
 export function DesktopNav() {
+  const { categories, isLoading } = useCategories();
+
   return (
     <nav className="hidden md:flex flex-1 items-center justify-center">
       <NavigationMenu>
@@ -57,23 +60,38 @@ export function DesktopNav() {
                 transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                 className="grid w-95 sm:w-105 gap-2 p-4 md:w-120 lg:w-130 md:grid-cols-2"
               >
-                {categories.map((category) => (
-                  <li key={category}>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href={`/categories/${category.toLowerCase()}`}
-                        className={cn(
-                          "block select-none rounded-md px-4 py-2.5 text-sm",
-                          "no-underline outline-none transition-all",
-                          "hover:bg-accent hover:text-accent-foreground",
-                          "focus:bg-accent focus:text-accent-foreground"
-                        )}
-                      >
-                        {category}
-                      </Link>
-                    </NavigationMenuLink>
+                {isLoading ? (
+                  <li className="col-span-full flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </li>
-                ))}
+                ) : categories.length === 0 ? (
+                  <li className="col-span-full text-center py-4 text-sm text-muted-foreground">
+                    No categories available
+                  </li>
+                ) : (
+                  categories.map((category) => (
+                    <li key={category.id}>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href={`/categories/${category.id}`}
+                          className={cn(
+                            "block select-none rounded-md px-4 py-2.5 text-sm",
+                            "no-underline outline-none transition-all",
+                            "hover:bg-accent hover:text-accent-foreground",
+                            "focus:bg-accent focus:text-accent-foreground"
+                          )}
+                        >
+                          <div className="font-medium">{category.name}</div>
+                          {category.description && (
+                            <div className="text-xs text-muted-foreground truncate">
+                              {category.description}
+                            </div>
+                          )}
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                  ))
+                )}
               </motion.ul>
             </NavigationMenuContent>
           </NavigationMenuItem>

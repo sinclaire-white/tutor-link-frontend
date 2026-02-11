@@ -3,25 +3,26 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { LogOut, Menu } from 'lucide-react';
+import { LogOut, Menu, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { useCategories } from '@/hooks/useCategories';
 
-// Fake data
-const categories = ['Math', 'Science', 'English', 'History', 'Languages'];
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];
+
 const dashboardLinks = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Upcoming Bookings', href: '/bookings' },
-  { label: 'Hire Tutors', href: '/hire' },
+  { label: 'Hire Tutors', href: '/tutors' },
   { label: 'Profile', href: '/profile' },
 ];
+
 const fakeUser = {
   name: 'John Doe',
   email: 'john@example.com',
@@ -34,6 +35,7 @@ interface MobileMenuProps {
 
 export function MobileMenu({ isLoggedIn }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { categories, isLoading } = useCategories();
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -76,19 +78,30 @@ export function MobileMenu({ isLoggedIn }: MobileMenuProps) {
                 {link.label}
               </Link>
             ))}
+            
             <div>
               <p className="text-sm font-medium mb-2">Categories</p>
-              {categories.map((category) => (
-                <Link
-                  key={category}
-                  href={`/categories/${category.toLowerCase()}`}
-                  className="block text-sm hover:text-accent-foreground transition-colors pl-4"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {category}
-                </Link>
-              ))}
+              {isLoading ? (
+                <div className="flex items-center gap-2 pl-4 py-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Loading...</span>
+                </div>
+              ) : categories.length === 0 ? (
+                <p className="text-sm text-muted-foreground pl-4">No categories</p>
+              ) : (
+                categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/categories/${category.id}`}
+                    className="block text-sm hover:text-accent-foreground transition-colors pl-4 py-1"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {category.name}
+                  </Link>
+                ))
+              )}
             </div>
+
             {isLoggedIn && (
               <>
                 <p className="text-sm font-medium mt-4">Dashboard</p>
