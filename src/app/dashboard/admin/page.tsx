@@ -1,259 +1,62 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import StatsCards from '@/components/dashboard/admin/StatsCards';
-import CategoryManager from '@/components/dashboard/admin/CategoryManager';
-import Pagination from '@/components/dashboard/Pagination';
-import { authClient } from '@/lib/auth-client';
+import { api } from '@/lib/axios';
+import { useSession } from '@/providers/SessionProvider';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, Calendar, GraduationCap } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
-
-const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
-
-export default function AdminDashboard() {
-  const [query, setQuery] = useState('');
-  const [usersPage, setUsersPage] = useState(1);
-  const [usersPerPage] = useState(10);
-  const [usersResult, setUsersResult] = useState<any>({ items: [], total: 0, page: 1, perPage: 10 });
-
-  const [bookingsPage, setBookingsPage] = useState(1);
-  const [bookingsPerPage] = useState(10);
-  const [bookingsResult, setBookingsResult] = useState<any>({ items: [], total: 0, page: 1, perPage: 10 });
-
-  const [stats, setStats] = useState<any>(null);
-  const [tutorsResult, setTutorsResult] = useState<any>({ items: [], total: 0, page: 1, perPage: 10 });
-  const [loading, setLoading] = useState(true);
+export default function AdminOverviewPage() {
+  const [stats, setStats] = useState({ users: 0, tutors: 0, bookings: 0 });
+  const { user, isLoading } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    const checkRole = async () => {
-      try {
-        const result = await authClient.getSession();
-        const sessionData = result?.data;
-        if (!sessionData?.user) {
-          router.push('/sign-in');
-          return;
-        }
-        // Redirect if user is not an admin
-        if ((sessionData.user as any).role !== 'ADMIN') {
-          router.push(`/dashboard/${(sessionData.user as any).role?.toLowerCase() || 'student'}`);
-          return;
-        }
-        setLoading(false);
-      } catch (error) {
-        router.push('/sign-in');
-      }
-    };
-    checkRole();
-  }, [router]);
+  const fetchStats = useCallback(() => {
+    api.get('/admin/stats')
+      .then(({ data }) => setStats(data.data))
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
-    if (!apiBase || loading) return;
-    fetch(`${apiBase}/admin/stats`, { credentials: 'include' })
-      .then(r => r.json()).then(d => setStats(d.data || d)).catch(() => {});
-  }, [loading]);
+    if (isLoading) return;
+    if (!user) {
+      router.push('/sign-in');
+      return;
+    }
+    if (!user.role || user.role !== 'ADMIN') {
+      router.push(`/dashboard/${user.role?.toLowerCase() || ''}`);
+      return;
+    }
 
-  useEffect(() => {
-    if (!apiBase || loading) return;
-    fetch(`${apiBase}/users?q=${encodeURIComponent(query)}&page=${usersPage}&perPage=${usersPerPage}`, { credentials: 'include' })
-      .then(r => r.json()).then(d => setUsersResult(d.data || d)).catch(() => {});
-  }, [query, usersPage, loading]);
+    fetchStats();
+  }, [user, isLoading, router, fetchStats]);
 
-  useEffect(() => {
-    if (!apiBase || loading) return;
-    fetch(`${apiBase}/bookings?page=${bookingsPage}&perPage=${bookingsPerPage}`, { credentials: 'include' })
-      .then(r => r.json()).then(d => setBookingsResult(d.data || d)).catch(() => {});
-  }, [bookingsPage, loading]);
+  if (isLoading || !user) return null;
 
-  useEffect(() => {
-    if (!apiBase || loading) return;
-    fetch(`${apiBase}/tutors?approved=false&page=1&perPage=10`, { credentials: 'include' })
-      .then(r => r.json()).then(d => setTutorsResult(d.data || d)).catch(() => {});
-  }, [loading]);
-
-  const users = usersResult.items || [];
-  const bookings = bookingsResult.items || [];
+  const cards = [
+    { title: 'Users', value: stats.users, icon: Users },
+    { title: 'Tutors', value: stats.tutors, icon: GraduationCap },
+    { title: 'Bookings', value: stats.bookings, icon: Calendar },
+  ];
 
   return (
-    <div className="p-6 max-w-6xl">
-      <h2 className="text-3xl font-bold mb-2">Admin Dashboard</h2>
-      <p className="text-muted-foreground mb-8">Manage platform users, tutors, bookings, and categories.</p>
-
-      {/* Stats Section */}
-      <section id="stats" className="mb-8 scroll-mt-4">
-        <h3 className="text-xl font-semibold mb-4">Platform Statistics</h3>
-        <div className="bg-card rounded-lg p-6 border">
-          <StatsCards stats={stats} />
-        </div>
-      </section>
-
-      {/* Tutor Applications Section */}
-      <section id="tutors" className="mb-8 scroll-mt-4">
-        <h3 className="text-xl font-semibold mb-4">Tutor Applications</h3>
-        <div className="border rounded-lg p-4 bg-card">
-          {(tutorsResult.items || []).length > 0 ? (
-            <div className="space-y-2">
-              {(tutorsResult.items || []).map((t: any) => (
-                <div key={t.id} className="p-3 border rounded-sm flex justify-between items-center hover:bg-muted/50 transition">
-                  <div className="flex-1">
-                    <div className="font-medium">{t.user?.name}</div>
-                    <div className="text-sm text-muted-foreground">{t.bio}</div>
-                  </div>
-                  <div className="flex gap-2 ml-4">
-                    <button 
-                      onClick={() => {
-                        fetch(`${apiBase}/tutors/${t.id}/approve`, { 
-                          method: 'PATCH', 
-                          credentials: 'include', 
-                          headers: { 'Content-Type': 'application/json' }, 
-                          body: JSON.stringify({ approved: true }) 
-                        })
-                          .then(() => {
-                            setTutorsResult((prev: any) => ({ 
-                              ...prev, 
-                              items: prev.items.filter((x: any) => x.id !== t.id) 
-                            }));
-                          });
-                      }} 
-                      className="px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700"
-                    >
-                      Approve
-                    </button>
-                    <button 
-                      onClick={() => {
-                        fetch(`${apiBase}/tutors/${t.id}/approve`, { 
-                          method: 'PATCH', 
-                          credentials: 'include', 
-                          headers: { 'Content-Type': 'application/json' }, 
-                          body: JSON.stringify({ approved: false }) 
-                        })
-                          .then(() => {
-                            setTutorsResult((prev: any) => ({ 
-                              ...prev, 
-                              items: prev.items.filter((x: any) => x.id !== t.id) 
-                            }));
-                          });
-                      }} 
-                      className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">No pending tutor applications.</p>
-          )}
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section id="categories" className="mb-8 scroll-mt-4">
-        <h3 className="text-xl font-semibold mb-4">Category Management</h3>
-        <div className="border rounded-lg p-4 bg-card">
-          <CategoryManager />
-        </div>
-      </section>
-
-      {/* Users Section */}
-      <section id="users" className="mb-8 scroll-mt-4">
-        <h3 className="text-xl font-semibold mb-4">User Management</h3>
-        <div className="border rounded-lg p-4 bg-card">
-          <div className="mb-4">
-            <input 
-              value={query} 
-              onChange={(e) => { setQuery(e.target.value); setUsersPage(1); }} 
-              placeholder="Search users by name or email..." 
-              className="w-full border px-3 py-2 rounded text-sm"
-            />
-          </div>
-          {users.length > 0 ? (
-            <>
-              <ul className="space-y-2 max-h-96 overflow-y-auto">
-                {users.map((u: any) => (
-                  <li key={u.id} className="p-3 border rounded-sm flex justify-between items-center hover:bg-muted/50 transition">
-                    <div className="flex-1">
-                      <div className="font-medium">{u.name}</div>
-                      <div className="text-sm text-muted-foreground">{u.email} • {u.role}</div>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        fetch(`${apiBase}/users/${u.id}/suspend`, { 
-                          method: 'PATCH', 
-                          credentials: 'include', 
-                          headers: { 'Content-Type': 'application/json' }, 
-                          body: JSON.stringify({ suspended: !u.isSuspended }) 
-                        })
-                          .then(r => r.json()).then(() => {
-                            fetch(`${apiBase}/users?q=${encodeURIComponent(query)}&page=${usersPage}&perPage=${usersPerPage}`, { credentials: 'include' })
-                              .then(r => r.json()).then(d => setUsersResult(d.data || d)).catch(() => {});
-                          });
-                      }} 
-                      className={`px-3 py-1 rounded text-white text-sm ${
-                        u.isSuspended 
-                          ? 'bg-blue-600 hover:bg-blue-700' 
-                          : 'bg-amber-600 hover:bg-amber-700'
-                      }`}
-                    >
-                      {u.isSuspended ? 'Unsuspend' : 'Suspend'}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-4">
-                <Pagination 
-                  page={usersResult.page || 1} 
-                  total={Math.max(1, Math.ceil((usersResult.total || 0) / (usersResult.perPage || 10)))} 
-                  onChange={(p) => setUsersPage(p)} 
-                />
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">No users found.</p>
-          )}
-        </div>
-      </section>
-
-      {/* Bookings Section */}
-      <section id="bookings" className="scroll-mt-4">
-        <h3 className="text-xl font-semibold mb-4">Booking Oversight</h3>
-        <div className="border rounded-lg p-4 bg-card">
-          {bookings.length > 0 ? (
-            <>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {bookings.map((b: any) => (
-                  <div key={b.id} className="p-3 border rounded-sm flex justify-between items-center hover:bg-muted/50 transition">
-                    <div className="flex-1">
-                      <div className="font-medium">{b.student?.name} → {b.tutor?.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {b.scheduledAt ? new Date(b.scheduledAt).toLocaleString() : b.date}
-                        {b.status && ` • Status: ${b.status}`}
-                      </div>
-                    </div>
-                    <a 
-                      href={`/tutors/${b.tutor?.id}`} 
-                      className="text-primary underline hover:no-underline text-sm"
-                    >
-                      Tutor profile
-                    </a>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4">
-                <Pagination 
-                  page={bookingsResult.page || 1} 
-                  total={Math.max(1, Math.ceil((bookingsResult.total || 0) / (bookingsResult.perPage || 10)))} 
-                  onChange={(p) => setBookingsPage(p)} 
-                />
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">No bookings found.</p>
-          )}
-        </div>
-      </section>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Overview</h1>
+      
+      <div className="grid gap-4 md:grid-cols-3">
+        {cards.map((card) => (
+          <Card key={card.title}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+              <card.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{card.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

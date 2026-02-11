@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { authClient } from './auth-client';
+import { usePathname } from 'next/navigation'; 
+import { authClient } from '@/lib/auth-client';
 
 interface SessionUser {
   id: string;
@@ -23,6 +24,7 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const pathname = usePathname(); // Get current route
 
   const refetchSession = async () => {
     try {
@@ -47,7 +49,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     refetchSession();
   }, []);
 
-  // Listen for visibility changes to refetch session when tab becomes active
+  // Refetch when route changes - THIS FIXES THE ISSUE
+  useEffect(() => {
+    refetchSession();
+  }, [pathname]);
+
+  // Listen for visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -59,7 +66,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // Listen for storage changes (logout in another tab)
+  // Listen for storage changes
   useEffect(() => {
     const handleStorageChange = () => {
       refetchSession();
@@ -73,6 +80,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     user,
     isLoading,
     isLoggedIn: !!user,
+    refetchSession,
   };
 
   return (

@@ -1,3 +1,4 @@
+// app/dashboard/tutor/page.tsx
 "use client";
 
 import { Suspense, useEffect, useState } from 'react';
@@ -9,7 +10,7 @@ import ReviewsList from '@/components/dashboard/ReviewsList';
 import ConfirmSheet from '@/components/dashboard/ConfirmSheet';
 import Pagination from '@/components/dashboard/Pagination';
 import BookingCalendar from '@/components/dashboard/BookingCalendar';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/providers/SessionProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,49 +24,59 @@ export default function TutorDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookingPage, setBookingPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
+  
   const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
+  const { user, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
+  // Single effect for role check and data fetch
   useEffect(() => {
-    const checkRole = async () => {
+    if (sessionLoading) return;
+
+    if (!user) {
+      router.push('/sign-in');
+      return;
+    }
+
+    // Redirect if not tutor
+    if (user.role !== 'TUTOR') {
+      router.push(`/dashboard/${user.role?.toLowerCase() || 'student'}`);
+      return;
+    }
+
+    // Fetch data
+    const fetchData = async () => {
       try {
-        const result = await authClient.getSession();
-        const sessionData = result?.data;
-        if (!sessionData?.user) {
-          router.push('/sign-in');
-          return;
+        const [profileRes, bookingsRes] = await Promise.all([
+          fetch(`${apiBase}/users/me`, { credentials: 'include' }),
+          fetch(`${apiBase}/bookings/my-bookings`, { credentials: 'include' })
+        ]);
+
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          setProfile(profileData.data || profileData);
         }
-        // Redirect if user is not a tutor
-        if ((sessionData.user as any).role !== 'TUTOR') {
-          router.push(`/dashboard/${(sessionData.user as any).role?.toLowerCase() || 'student'}`);
-          return;
+
+        if (bookingsRes.ok) {
+          const bookingsData = await bookingsRes.json();
+          setBookings(bookingsData.data || []);
+        } else {
+          // Fallback data for demo
+          setBookings([
+            { id: 'b1', date: '2026-03-01 10:00', studentName: 'Alice', status: 'pending' },
+            { id: 'b2', date: '2026-03-05 14:00', studentName: 'Bob', status: 'approved' },
+          ]);
         }
-        setLoading(false);
       } catch (error) {
-        router.push('/sign-in');
+        console.error('Failed to fetch tutor data:', error);
+      } finally {
+        setDataLoading(false);
       }
     };
-    checkRole();
-  }, [router]);
 
-  useEffect(() => {
-    if (!apiBase || loading) return;
-    fetch(`${apiBase}/users/me`, { credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => setProfile(d.data || d))
-      .catch(() => setProfile(null));
-
-    fetch(`${apiBase}/bookings/my-bookings`, { credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => setBookings(d.data || []))
-      .catch(() => {
-        setBookings([
-          { id: 'b1', date: '2026-03-01 10:00', studentName: 'Alice', status: 'pending' },
-          { id: 'b2', date: '2026-03-05 14:00', studentName: 'Bob', status: 'approved' },
-        ]);
-      });
-  }, [apiBase, loading]);
+    fetchData();
+  }, [user, sessionLoading, router, apiBase]);
 
   async function handleAction(id: string, status: string) {
     setBookings((b) => b.map((x) => (x.id === id ? { ...x, status } : x)));
@@ -81,6 +92,16 @@ export default function TutorDashboard() {
       console.error('Failed to update booking:', e);
     }
   }
+
+  if (sessionLoading || dataLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   const bookingPageTotal = Math.max(1, Math.ceil((bookings?.length || 0) / 5));
 

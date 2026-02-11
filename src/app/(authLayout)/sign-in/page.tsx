@@ -62,8 +62,11 @@ export default function SignInPage() {
       }
 
       toast.success("Welcome back!");
+      // Wait for cookie to be set, then redirect with a small delay to ensure session is updated
+       setTimeout(() => {
       router.push("/dashboard");
-      router.refresh(); // Refresh to update auth state
+      router.refresh(); // 
+    }, 100);
     } catch (error) {
       console.error("Sign-in error:", error);
       toast.error("Something went wrong. Please try again.");

@@ -1,11 +1,12 @@
+// app/dashboard/student/page.tsx
 "use client";
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import TopTabs from '@/components/dashboard/TopTabs';
 import BookingCalendar from '@/components/dashboard/BookingCalendar';
 import Pagination from '@/components/dashboard/Pagination';
 import { useSession } from '@/providers/SessionProvider';
+import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,52 +27,73 @@ export default function StudentDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingPage, setBookingPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
+  
+  const { user, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
+  // Single effect for role check and data fetch
   useEffect(() => {
-    const checkRole = async () => {
+    if (sessionLoading) return;
+
+    // If no user, redirect to sign-in
+    if (!user) {
+      router.push('/sign-in');
+      return;
+    }
+
+    // If wrong role, redirect to correct dashboard
+    if (user.role !== 'STUDENT') {
+      router.push(`/dashboard/${user.role?.toLowerCase() || 'student'}`);
+      return;
+    }
+
+    // Fetch data only after role confirmed
+    const fetchData = async () => {
       try {
-        const result = await authClient.getSession();
-        const sessionData = result?.data;
-        if (!sessionData?.user) {
-          router.push('/sign-in');
-          return;
+        const [profileRes, bookingsRes] = await Promise.all([
+          fetch(`${apiBase}/users/me`, { credentials: 'include' }),
+          fetch(`${apiBase}/bookings/my-bookings`, { credentials: 'include' })
+        ]);
+
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          setProfile(profileData.data || profileData);
         }
-        // Redirect if user is not a student
-        if ((sessionData.user as any).role !== 'STUDENT') {
-          router.push(`/dashboard/${(sessionData.user as any).role?.toLowerCase() || 'student'}`);
-          return;
+
+        if (bookingsRes.ok) {
+          const bookingsData = await bookingsRes.json();
+          setBookings(bookingsData.data || []);
         }
-        setLoading(false);
       } catch (error) {
-        router.push('/sign-in');
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setDataLoading(false);
       }
     };
-    checkRole();
-  }, [router]);
 
-  useEffect(() => {
-    if (!apiBase || loading) return;
+    fetchData();
+  }, [user, sessionLoading, router, apiBase]);
 
-    fetch(`${apiBase}/users/me`, { credentials: 'include' })
-      .then((r) => r.json())
-      .then((data) => setProfile(data.data || data))
-      .catch(() => {});
+  // Show loading while checking session
+  if (sessionLoading || dataLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-    fetch(`${apiBase}/bookings/my-bookings`, { credentials: 'include' })
-      .then((r) => r.json())
-      .then((data) => setBookings(data.data || []))
-      .catch(() => {});
-  }, [apiBase, loading]);
+  // If no user, don't render (will redirect)
+  if (!user) return null;
 
   const bookingPageTotal = Math.max(1, Math.ceil((bookings?.length || 0) / 5));
 
   return (
     <div className="p-6 max-w-4xl">
       <h2 className="text-3xl font-bold mb-2">My Dashboard</h2>
-      <p className="text-muted-foreground mb-6">Welcome back! Here's an overview of your activity.</p>
+      <p className="text-muted-foreground mb-6">Welcome back! Here&apos;s an overview of your activity.</p>
 
       {/* Bookings Section */}
       <section id="bookings" className="mb-8 scroll-mt-4">
@@ -118,7 +140,7 @@ export default function StudentDashboard() {
       <section id="reviews" className="mb-8 scroll-mt-4">
         <h3 className="text-xl font-semibold mb-4">Reviews Given</h3>
         <div className="border rounded-lg p-4 bg-card text-center text-sm text-muted-foreground py-8">
-          <p>Reviews you've submitted will appear here.</p>
+          <p>Reviews you&apos;ve submitted will appear here.</p>
         </div>
       </section>
 

@@ -1,76 +1,52 @@
+// src/components/dashboard/Sidebar.tsx
 "use client";
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Users, BarChart3, BookOpen, MessageSquare, Settings, LogOut, BookMarked } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Calendar, 
+  FolderOpen, 
+  ClipboardList,
+  User,
+  Star,
+  LogOut 
+} from 'lucide-react';
+import { useSession } from '@/providers/SessionProvider';
 import { authClient } from '@/lib/auth-client';
 
+const navigation = {
+  STUDENT: [
+    { name: 'Overview', href: '/dashboard/student', icon: LayoutDashboard },
+    { name: 'Bookings', href: '/dashboard/student/bookings', icon: Calendar },
+    { name: 'Reviews', href: '/dashboard/student/reviews', icon: Star },
+    { name: 'Profile', href: '/dashboard/student/profile', icon: User },
+  ],
+  TUTOR: [
+    { name: 'Overview', href: '/dashboard/tutor', icon: LayoutDashboard },
+    { name: 'Bookings', href: '/dashboard/tutor/bookings', icon: Calendar },
+    { name: 'Reviews', href: '/dashboard/tutor/reviews', icon: Star },
+    { name: 'Profile', href: '/dashboard/tutor/profile', icon: User },
+  ],
+  ADMIN: [
+    { name: 'Overview', href: '/dashboard/admin', icon: LayoutDashboard },
+    { name: 'Categories', href: '/dashboard/admin/categories', icon: FolderOpen },
+    { name: 'Users', href: '/dashboard/admin/users', icon: Users },
+    { name: 'Bookings', href: '/dashboard/admin/bookings', icon: Calendar },
+    { name: 'Applications', href: '/dashboard/admin/tutor-applications', icon: ClipboardList },
+  ],
+};
+
 export default function Sidebar() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
+  const { user, isLoading } = useSession();
 
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const result = await authClient.getSession();
-        const sessionData = result?.data;
-        if (sessionData?.user) {
-          setUser(sessionData.user);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    getUser();
-  }, []);
+  // Don't show skeleton - let global loading handle it
+  if (isLoading || !user) return null;
 
-  const isActive = (path: string) => pathname === path;
-  
-  const getLinkClass = (path: string) => `
-    flex items-center gap-3 px-3 py-2 rounded transition-colors
-    ${isActive(path) 
-      ? 'bg-primary text-primary-foreground' 
-      : 'hover:bg-muted'
-    }
-  `;
-
-  if (loading) {
-    return (
-      <aside className="w-72 border-r bg-muted/10 p-4">
-        <div className="animate-pulse h-8 bg-muted rounded w-24"></div>
-      </aside>
-    );
-  }
-
-  const userRole = user?.role || 'STUDENT';
-
-  const studentMenuItems = [
-    { label: 'Profile', icon: Settings, path: '/dashboard/student#profile' },
-    { label: 'Bookings', icon: BookMarked, path: '/dashboard/student#bookings' },
-    { label: 'Reviews', icon: MessageSquare, path: '/dashboard/student#reviews' },
-  ];
-
-  const tutorMenuItems = [
-    { label: 'Profile', icon: Settings, path: '/dashboard/tutor#profile' },
-    { label: 'Bookings', icon: BookMarked, path: '/dashboard/tutor#bookings' },
-    { label: 'Reviews', icon: MessageSquare, path: '/dashboard/tutor#reviews' },
-  ];
-
-  const adminMenuItems = [
-    { label: 'Stats', icon: BarChart3, path: '/dashboard/admin#stats' },
-    { label: 'Users', icon: Users, path: '/dashboard/admin#users' },
-    { label: 'Bookings', icon: BookOpen, path: '/dashboard/admin#bookings' },
-    { label: 'Tutors', icon: Users, path: '/dashboard/admin#tutors' },
-    { label: 'Categories', icon: LayoutDashboard, path: '/dashboard/admin#categories' },
-  ];
-
-  let menuItems = studentMenuItems;
-  if (userRole === 'TUTOR') menuItems = tutorMenuItems;
-  if (userRole === 'ADMIN') menuItems = adminMenuItems;
+  const userRole = user.role as 'STUDENT' | 'TUTOR' | 'ADMIN';
+  const items = navigation[userRole];
 
   const handleLogout = async () => {
     await authClient.signOut();
@@ -78,40 +54,39 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-72 border-r pr-4 bg-linear-to-b from-muted/5 to-transparent">
-      <div className="py-6 px-4 border-b">
-        <div className="mb-2">
-          <h3 className="text-lg font-semibold">TutorLink</h3>
-          <p className="text-xs text-muted-foreground capitalize">{userRole.toLowerCase()} Dashboard</p>
-        </div>
-        {user?.name && (
-          <p className="text-sm text-muted-foreground truncate">Welcome, {user.name.split(' ')[0]}</p>
-        )}
+    <aside className="w-64 border-r bg-card h-screen sticky top-0 flex flex-col">
+      <div className="p-4 border-b">
+        <h2 className="font-bold text-lg">TutorLink</h2>
+        <p className="text-xs text-muted-foreground capitalize">{userRole.toLowerCase()}</p>
       </div>
 
-      <nav className="px-4 py-6 space-y-1">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
+      <nav className="flex-1 p-2 space-y-1">
+        {items.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
-            <Link 
-              key={item.path} 
-              href={item.path} 
-              className={getLinkClass(item.path)}
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
             >
-              <Icon className="h-4 w-4" />
-              <span className="text-sm font-medium">{item.label}</span>
+              <item.icon className="h-4 w-4" />
+              {item.name}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t px-4 py-4">
+      <div className="p-4 border-t">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium hover:bg-destructive/10 text-destructive transition-colors"
+          className="flex w-full items-center gap-3 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors"
         >
           <LogOut className="h-4 w-4" />
-          <span>Sign Out</span>
+          Sign Out
         </button>
       </div>
     </aside>
