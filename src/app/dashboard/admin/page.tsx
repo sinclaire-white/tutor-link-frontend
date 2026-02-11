@@ -1,6 +1,7 @@
+// app/dashboard/admin/page.tsx
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
 import { useSession } from '@/providers/SessionProvider';
@@ -12,25 +13,21 @@ export default function AdminOverviewPage() {
   const { user, isLoading } = useSession();
   const router = useRouter();
 
-  const fetchStats = useCallback(() => {
-    api.get('/admin/stats')
-      .then(({ data }) => setStats(data.data))
-      .catch(console.error);
-  }, []);
-
   useEffect(() => {
     if (isLoading) return;
     if (!user) {
       router.push('/sign-in');
       return;
     }
-    if (!user.role || user.role !== 'ADMIN') {
-      router.push(`/dashboard/${user.role?.toLowerCase() || ''}`);
+    if (user.role !== 'ADMIN') {
+      router.push(`/dashboard/${user.role?.toLowerCase() || 'student'}`);
       return;
     }
 
-    fetchStats();
-  }, [user, isLoading, router, fetchStats]);
+    api.get('/admin/stats')
+      .then(({ data }) => setStats(data.data))
+      .catch(console.error);
+  }, [user, isLoading, router]);
 
   if (isLoading || !user) return null;
 

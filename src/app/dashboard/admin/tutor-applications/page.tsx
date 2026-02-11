@@ -1,6 +1,7 @@
+// app/dashboard/admin/tutor-applications/page.tsx
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
 import { useSession } from '@/providers/SessionProvider';
@@ -20,11 +21,22 @@ export default function AdminTutorApplicationsPage() {
   const { user, isLoading } = useSession();
   const router = useRouter();
 
-  const fetchApplications = useCallback(() => {
+  // Function BEFORE useEffect
+  const fetchApplications = () => {
     api.get('/tutors', { params: { approved: 'false' } })
       .then(({ data }) => setApplications(data.data?.items || []))
       .catch(console.error);
-  }, []);
+  };
+
+  const handleDecision = async (id: string, approved: boolean) => {
+    try {
+      await api.patch(`/tutors/${id}/approve`, { approved });
+      fetchApplications();
+      toast.success(approved ? 'Approved' : 'Rejected');
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
 
   useEffect(() => {
     if (isLoading) return;
@@ -32,23 +44,12 @@ export default function AdminTutorApplicationsPage() {
       router.push('/sign-in');
       return;
     }
-    if (!user.role || user.role !== 'ADMIN') {
-      router.push(`/dashboard/${user.role?.toLowerCase() || ''}`);
+    if (user.role !== 'ADMIN') {
+      router.push(`/dashboard/${user.role?.toLowerCase() || 'student'}`);
       return;
     }
     fetchApplications();
-  }, [user, isLoading, router, fetchApplications]);
-
-  const handleDecision = async (id: string, approved: boolean) => {
-    try {
-      await api.patch(`/tutors/${id}/approve`, { approved });
-      fetchApplications();
-      toast.success(approved ? 'Approved' : 'Rejected');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'An error occurred';
-      toast.error(message);
-    }
-  };
+  }, [user, isLoading, router]);
 
   if (isLoading || !user) return null;
 

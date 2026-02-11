@@ -1,6 +1,7 @@
+// app/dashboard/admin/users/page.tsx
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
 import { useSession } from '@/providers/SessionProvider';
@@ -25,11 +26,22 @@ export default function AdminUsersPage() {
   const { user, isLoading } = useSession();
   const router = useRouter();
 
-  const fetchUsers = useCallback(() => {
+  // Functions BEFORE useEffect
+  const fetchUsers = () => {
     api.get('/users', { params: { q: query } })
       .then(({ data }) => setUsers(data.data?.items || []))
       .catch(console.error);
-  }, [query]);
+  };
+
+  const handleSuspend = async (id: string, isSuspended: boolean) => {
+    try {
+      await api.patch(`/users/${id}/suspend`, { suspended: !isSuspended });
+      fetchUsers();
+      toast.success(isSuspended ? 'User unsuspended' : 'User suspended');
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
 
   useEffect(() => {
     if (isLoading) return;
@@ -37,23 +49,12 @@ export default function AdminUsersPage() {
       router.push('/sign-in');
       return;
     }
-    if (!user.role || user.role !== 'ADMIN') {
-      router.push(`/dashboard/${user.role?.toLowerCase() || ''}`);
+    if (user.role !== 'ADMIN') {
+      router.push(`/dashboard/${user.role?.toLowerCase() || 'student'}`);
       return;
     }
     fetchUsers();
-  }, [user, isLoading, router, fetchUsers]);
-
-  const handleSuspend = async (id: string, isSuspended: boolean) => {
-    try {
-      await api.patch(`/users/${id}/suspend`, { suspended: !isSuspended });
-      fetchUsers();
-      toast.success(isSuspended ? 'User unsuspended' : 'User suspended');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'An error occurred';
-      toast.error(message);
-    }
-  };
+  }, [user, isLoading, router, query]);
 
   if (isLoading || !user) return null;
 
