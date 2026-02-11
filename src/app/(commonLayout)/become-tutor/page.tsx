@@ -1,44 +1,66 @@
 // src/app/(commonLayout)/become-tutor/page.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { authClient } from '@/lib/auth-client';
-import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { authClient } from "@/lib/auth-client";
+import { api } from "@/lib/axios"; // Use your axios instance
+import Link from "next/link";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-const categories = ['Math', 'Science', 'English', 'History', 'Languages', 'Programming', 'Music', 'Art'];
+interface Category {
+  id: string;
+  name: string;
+}
 
 export default function BecomeTutorPage() {
-  const [user, setUser] = useState<{name?: string; role?: string} | null>(null);
+  const [user, setUser] = useState<{ name?: string; role?: string } | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const router = useRouter();
 
   const [formData, setFormData] = useState({
-    bio: '',
-    qualifications: '',
-    hourlyRate: '',
-    category: 'Math',
+    bio: "",
+    qualifications: "",
+    hourlyRate: "",
+    categoryIds: [] as string[],
   });
+  const handleCategoryToggle = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      categoryIds: prev.categoryIds.includes(id)
+        ? prev.categoryIds.filter((itemId) => itemId !== id)
+        : [...prev.categoryIds, id],
+    }));
+  };
 
+  // Check session
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const result = await authClient.getSession();
         const sessionData = result?.data;
         if (!sessionData?.user) {
-          router.push('/sign-in');
+          router.push("/sign-in");
           return;
         }
         setUser(sessionData.user);
       } catch {
-        router.push('/sign-in');
+        router.push("/sign-in");
       } finally {
         setLoading(false);
       }
@@ -46,49 +68,51 @@ export default function BecomeTutorPage() {
     fetchUser();
   }, [router]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  // Fetch real categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await api.get("/categories");
+        const cats = data.data || [];
+        setCategories(cats);
+        if (cats.length > 0) {
+          setFormData((prev) => ({ ...prev, categoryId: cats[0].id }));
+        }
+      } catch (err) {
+        toast.error("Failed to load categories");
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setStatus('idle');
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiBase}/api/v1/tutors/apply`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bio: formData.bio,
-          qualifications: formData.qualifications,
-          hourlyRate: parseFloat(formData.hourlyRate),
-          categoryId: formData.category,
-        }),
+      // Use your axios instance with proper error handling
+      await api.post("/tutors/apply", {
+        categoryIds: formData.categoryIds,
+        bio: formData.bio,
+        qualifications: formData.qualifications,
+        hourlyRate: parseFloat(formData.hourlyRate),
       });
 
-      if (response.ok) {
-        setStatus('success');
-        setMessage('Your tutor application has been submitted! We\'ll review it shortly.');
-        setFormData({ bio: '', qualifications: '', hourlyRate: '', category: 'Math' });
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
-      } else {
-        const error = await response.json();
-        setStatus('error');
-        setMessage(error.message || 'Failed to submit application');
-      }
-    } catch (error) {
-      console.error('Application error:', error);
-      setStatus('error');
-      setMessage('Network error. Please try again.');
+      toast.success("Application submitted! Redirecting...");
+      setTimeout(() => router.push("/dashboard"), 1500);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit application");
     } finally {
       setSubmitting(false);
     }
@@ -97,23 +121,24 @@ export default function BecomeTutorPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse">Loading...</div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Check if user is already a tutor (has a tutor profile)
-  if (user?.role === 'TUTOR') {
+  if (user?.role === "TUTOR") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Already a Tutor</CardTitle>
-            <CardDescription>You&apos;re already registered as a tutor!</CardDescription>
+            <CardDescription>
+              You&apos;re already registered as a tutor!
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Visit your tutor dashboard to manage your profile, bookings, and earnings.
+              Visit your tutor dashboard to manage your profile and bookings.
             </p>
             <Button className="w-full" asChild>
               <Link href="/dashboard">Go to Dashboard</Link>
@@ -125,11 +150,11 @@ export default function BecomeTutorPage() {
   }
 
   return (
-      <div className="min-h-screen bg-linear-to-b from-muted/30 to-background py-12">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link 
-          href="/" 
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ChevronLeft className="h-4 w-4" />
           Back to Home
@@ -137,44 +162,37 @@ export default function BecomeTutorPage() {
 
         <Card>
           <CardHeader className="space-y-2">
-            <CardTitle className="text-3xl">Become a Tutor</CardTitle>
+            <CardTitle className="text-2xl">Become a Tutor</CardTitle>
             <CardDescription>
-              Share your expertise and start earning. Fill out the form below to apply as a tutor.
+              Share your expertise and start earning. Fill out the form below to
+              apply.
             </CardDescription>
           </CardHeader>
 
           <CardContent>
-            {status === 'success' && (
-              <div className="mb-6 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg text-green-800 dark:text-green-100">
-                {message}
-              </div>
-            )}
-
-            {status === 'error' && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-100">
-                {message}
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Category */}
               <div className="space-y-2">
-                <label htmlFor="category" className="text-sm font-medium">
-                  Primary Subject/Category
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                >
+                <label className="text-sm font-medium">Expertise Areas</label>
+                <div className="grid grid-cols-2 gap-3 p-4 border rounded-md max-h-48 overflow-y-auto">
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
+                    <div key={cat.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={cat.id}
+                        checked={formData.categoryIds.includes(cat.id)}
+                        onChange={() => handleCategoryToggle(cat.id)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label
+                        htmlFor={cat.id}
+                        className="text-sm cursor-pointer"
+                      >
+                        {cat.name}
+                      </label>
+                    </div>
                   ))}
-                </select>
+                </div>
               </div>
 
               {/* Bio */}
@@ -187,8 +205,8 @@ export default function BecomeTutorPage() {
                   name="bio"
                   value={formData.bio}
                   onChange={handleInputChange}
-                  placeholder="Tell students about yourself, your teaching experience, and what makes you a great tutor..."
-                  rows={5}
+                  placeholder="Tell students about yourself and your teaching experience..."
+                  rows={4}
                   className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   required
                 />
@@ -197,15 +215,15 @@ export default function BecomeTutorPage() {
               {/* Qualifications */}
               <div className="space-y-2">
                 <label htmlFor="qualifications" className="text-sm font-medium">
-                  Qualifications & Certifications
+                  Qualifications
                 </label>
                 <textarea
                   id="qualifications"
                   name="qualifications"
                   value={formData.qualifications}
                   onChange={handleInputChange}
-                  placeholder="E.g., Bachelor's in Mathematics, TEFL Certification, etc."
-                  rows={3}
+                  placeholder="E.g., Bachelor's in Mathematics, 5 years teaching experience..."
+                  rows={2}
                   className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
               </div>
@@ -220,69 +238,40 @@ export default function BecomeTutorPage() {
                   name="hourlyRate"
                   type="number"
                   step="0.01"
-                  min="0"
-                  placeholder="50"
+                  min="1"
+                  placeholder="50.00"
                   value={formData.hourlyRate}
                   onChange={handleInputChange}
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  This is your asking rate. Students may negotiate.
+                  Set your rate. You can change this later.
                 </p>
               </div>
 
-              {/* Submit Button */}
+              {/* Submit */}
               <Button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || categoriesLoading}
                 className="w-full"
                 size="lg"
               >
-                {submitting ? 'Submitting...' : 'Submit Application'}
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Application"
+                )}
               </Button>
 
               <p className="text-xs text-muted-foreground text-center">
-                Your application will be reviewed by our team. You&apos;ll receive an email once approved.
+                Your application will be reviewed by our team.
               </p>
             </form>
           </CardContent>
         </Card>
-
-        {/* Info Cards */}
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Set Your Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                You have full control over your hourly rate. Adjust it anytime to match your experience level.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Build Your Profile</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Create a compelling profile with your qualifications and teaching style to attract more students.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Earn & Grow</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Earn money while helping students. Higher ratings lead to more bookings and opportunities.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
