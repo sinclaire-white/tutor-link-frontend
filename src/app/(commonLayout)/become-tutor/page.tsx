@@ -13,9 +13,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import { api } from "@/lib/axios"; // Use your axios instance
+import { api } from "@/lib/axios";
 import Link from "next/link";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface Category {
@@ -23,10 +23,18 @@ interface Category {
   name: string;
 }
 
+type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+
+interface AvailabilitySlot {
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+}
+
+const DAYS: DayOfWeek[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+
 export default function BecomeTutorPage() {
-  const [user, setUser] = useState<{ name?: string; role?: string } | null>(
-    null,
-  );
+  const [user, setUser] = useState<{ name?: string; role?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -39,6 +47,12 @@ export default function BecomeTutorPage() {
     hourlyRate: "",
     categoryIds: [] as string[],
   });
+
+  // Availability state
+  const [availabilities, setAvailabilities] = useState<AvailabilitySlot[]>([
+    { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '17:00' }
+  ]);
+
   const handleCategoryToggle = (id: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -46,6 +60,21 @@ export default function BecomeTutorPage() {
         ? prev.categoryIds.filter((itemId) => itemId !== id)
         : [...prev.categoryIds, id],
     }));
+  };
+
+  // Availability handlers
+  const addAvailability = () => {
+    setAvailabilities(prev => [...prev, { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '17:00' }]);
+  };
+
+  const removeAvailability = (index: number) => {
+    setAvailabilities(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateAvailability = (index: number, field: keyof AvailabilitySlot, value: string) => {
+    setAvailabilities(prev => prev.map((slot, i) => 
+      i === index ? { ...slot, [field]: value } : slot
+    ));
   };
 
   // Check session
@@ -68,18 +97,13 @@ export default function BecomeTutorPage() {
     fetchUser();
   }, [router]);
 
-  // Fetch real categories
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const { data } = await api.get("/categories");
-        const cats = data.data || [];
-        setCategories(cats);
-        if (cats.length > 0) {
-          setFormData((prev) => ({ ...prev, categoryId: cats[0].id }));
-        }
+        setCategories(data.data || []);
       } catch (err) {
-        console.error(err);
         toast.error("Failed to load categories");
       } finally {
         setCategoriesLoading(false);
@@ -89,9 +113,7 @@ export default function BecomeTutorPage() {
   }, []);
 
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -99,15 +121,26 @@ export default function BecomeTutorPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (formData.categoryIds.length === 0) {
+      toast.error("Please select at least one category");
+      return;
+    }
+
+    if (availabilities.length === 0) {
+      toast.error("Please add at least one availability slot");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      // Use your axios instance with proper error handling
       await api.post("/tutors/apply", {
         categoryIds: formData.categoryIds,
         bio: formData.bio,
         qualifications: formData.qualifications,
         hourlyRate: parseFloat(formData.hourlyRate),
+        availabilities: availabilities, // Send availability to backend
       });
 
       toast.success("Application submitted! Redirecting...");
@@ -165,41 +198,50 @@ export default function BecomeTutorPage() {
           <CardHeader className="space-y-2">
             <CardTitle className="text-2xl">Become a Tutor</CardTitle>
             <CardDescription>
-              Share your expertise and start earning. Fill out the form below to
-              apply.
+              Share your expertise and start earning. Fill out the form below to apply.
             </CardDescription>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Category */}
+              {/* Categories */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Expertise Areas</label>
+                <label className="text-sm font-medium">Expertise Areas *</label>
                 <div className="grid grid-cols-2 gap-3 p-4 border rounded-md max-h-48 overflow-y-auto">
-                  {categories.map((cat) => (
-                    <div key={cat.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={cat.id}
-                        checked={formData.categoryIds.includes(cat.id)}
-                        onChange={() => handleCategoryToggle(cat.id)}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <label
-                        htmlFor={cat.id}
-                        className="text-sm cursor-pointer"
-                      >
-                        {cat.name}
-                      </label>
+                  {categoriesLoading ? (
+                    <div className="col-span-2 flex justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
-                  ))}
+                  ) : categories.length === 0 ? (
+                    <p className="col-span-2 text-sm text-muted-foreground">No categories available</p>
+                  ) : (
+                    categories.map((cat) => (
+                      <div key={cat.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={cat.id}
+                          checked={formData.categoryIds.includes(cat.id)}
+                          onChange={() => handleCategoryToggle(cat.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <label htmlFor={cat.id} className="text-sm cursor-pointer">
+                          {cat.name}
+                        </label>
+                      </div>
+                    ))
+                  )}
                 </div>
+                {formData.categoryIds.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Selected: {formData.categoryIds.length} categories
+                  </p>
+                )}
               </div>
 
               {/* Bio */}
               <div className="space-y-2">
                 <label htmlFor="bio" className="text-sm font-medium">
-                  Bio / About You
+                  Bio / About You *
                 </label>
                 <textarea
                   id="bio"
@@ -232,7 +274,7 @@ export default function BecomeTutorPage() {
               {/* Hourly Rate */}
               <div className="space-y-2">
                 <label htmlFor="hourlyRate" className="text-sm font-medium">
-                  Hourly Rate ($)
+                  Hourly Rate ($) *
                 </label>
                 <Input
                   id="hourlyRate"
@@ -247,6 +289,70 @@ export default function BecomeTutorPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   Set your rate. You can change this later.
+                </p>
+              </div>
+
+              {/* Availability Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Availability *</label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addAvailability}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Slot
+                  </Button>
+                </div>
+                
+                <div className="space-y-2">
+                  {availabilities.map((slot, index) => (
+                    <div key={index} className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
+                      <select
+                        value={slot.dayOfWeek}
+                        onChange={(e) => updateAvailability(index, 'dayOfWeek', e.target.value as DayOfWeek)}
+                        className="flex-1 px-2 py-1 rounded border bg-background text-sm"
+                      >
+                        {DAYS.map(day => (
+                          <option key={day} value={day}>{day}</option>
+                        ))}
+                      </select>
+                      
+                      <Input
+                        type="time"
+                        value={slot.startTime}
+                        onChange={(e) => updateAvailability(index, 'startTime', e.target.value)}
+                        className="w-24 px-2 py-1 text-sm"
+                      />
+                      
+                      <span className="text-muted-foreground">to</span>
+                      
+                      <Input
+                        type="time"
+                        value={slot.endTime}
+                        onChange={(e) => updateAvailability(index, 'endTime', e.target.value)}
+                        className="w-24 px-2 py-1 text-sm"
+                      />
+                      
+                      {availabilities.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAvailability(index)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                <p className="text-xs text-muted-foreground">
+                  Add your weekly availability. Students will book sessions during these times.
                 </p>
               </div>
 
