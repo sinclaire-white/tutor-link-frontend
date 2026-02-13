@@ -1,8 +1,8 @@
 // app/sign-in/page.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
+
 const signInSchema = z.object({
   email: z.email("Please enter a valid email"),
   password: z.string().min(1, "Password is required"),
@@ -32,8 +33,12 @@ type SignInForm = z.infer<typeof signInSchema>;
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+const redirectUrl = searchParams.get("redirect") || "/dashboard";
+
 
   const {
     register,
@@ -46,6 +51,17 @@ export default function SignInPage() {
     },
   });
 
+   // Check if already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const result = await authClient.getSession();
+      if (result?.data?.user) {
+        router.push(redirectUrl);
+      }
+    };
+    checkSession();
+  }, [redirectUrl, router]);
+
   const onSubmit = async (data: SignInForm) => {
     setIsLoading(true);
     try {
@@ -57,16 +73,20 @@ export default function SignInPage() {
 
       if (result.error) {
         toast.error(result.error.message || "Invalid credentials");
-        
         return;
       }
 
       toast.success("Welcome back!");
-      // Wait for cookie to be set, then redirect with a small delay to ensure session is updated
-       setTimeout(() => {
-      router.push("/dashboard");
-      router.refresh(); // 
-    }, 100);
+      
+      // Wait for session to be ready, then redirect
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force session refresh before redirect
+      await authClient.getSession();
+      
+      router.push(redirectUrl);
+      router.refresh();
+      
     } catch (error) {
       console.error("Sign-in error:", error);
       toast.error("Something went wrong. Please try again.");

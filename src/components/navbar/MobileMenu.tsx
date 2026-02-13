@@ -12,6 +12,7 @@ import { useCategories } from '@/hooks/useCategories';
 
 const navLinks = [
   { label: 'Home', href: '/' },
+  { label: 'Tutors', href: '/tutors' },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];

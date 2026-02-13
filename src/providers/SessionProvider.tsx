@@ -49,7 +49,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     refetchSession();
   }, []);
 
-  // Refetch when route changes - THIS FIXES THE ISSUE
+  // Refetch when route changes
   useEffect(() => {
     refetchSession();
   }, [pathname]);

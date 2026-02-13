@@ -104,6 +104,7 @@ export default function BecomeTutorPage() {
         const { data } = await api.get("/categories");
         setCategories(data.data || []);
       } catch (err) {
+        console.error("Failed to load categories", err);
         toast.error("Failed to load categories");
       } finally {
         setCategoriesLoading(false);
