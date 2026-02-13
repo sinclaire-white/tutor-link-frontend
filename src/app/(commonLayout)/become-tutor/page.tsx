@@ -79,6 +79,7 @@ export default function BecomeTutorPage() {
           setFormData((prev) => ({ ...prev, categoryId: cats[0].id }));
         }
       } catch (err) {
+        console.error(err);
         toast.error("Failed to load categories");
       } finally {
         setCategoriesLoading(false);

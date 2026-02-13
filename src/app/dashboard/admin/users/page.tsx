@@ -1,7 +1,7 @@
 // app/dashboard/admin/users/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
 import { useSession } from '@/providers/SessionProvider';
@@ -9,42 +9,80 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search } from 'lucide-react';
+import { Search, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface User {
   id: string;
   name: string;
   email: string;
   role: string;
-  isSuspended?: boolean;
+}
+
+function LoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-100">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    </div>
+  );
 }
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [query, setQuery] = useState('');
-  const { user, isLoading } = useSession();
+  const [isLoading, setIsLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { user, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
-  // Functions BEFORE useEffect
-  const fetchUsers = () => {
-    api.get('/users', { params: { q: query } })
-      .then(({ data }) => setUsers(data.data?.items || []))
-      .catch(console.error);
-  };
-
-  const handleSuspend = async (id: string, isSuspended: boolean) => {
+   const fetchUsers = useCallback(async () => {
     try {
-      await api.patch(`/users/${id}/suspend`, { suspended: !isSuspended });
-      fetchUsers();
-      toast.success(isSuspended ? 'User unsuspended' : 'User suspended');
+      setIsLoading(true);
+      const { data } = await api.get('/users', { params: { q: query } });
+      setUsers(data.data?.items || []);
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error('Failed to load users');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [query]);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    
+    // Prevent self-deletion
+    if (deleteTarget.id === user?.id) {
+      toast.error('You cannot delete your own account');
+      setDeleteTarget(null);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await api.delete(`/users/${deleteTarget.id}`);
+      toast.success(`User "${deleteTarget.name}" deleted successfully`);
+      setDeleteTarget(null);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete user');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   useEffect(() => {
-    if (isLoading) return;
+    if (sessionLoading) return;
     if (!user) {
       router.push('/sign-in');
       return;
@@ -54,9 +92,11 @@ export default function AdminUsersPage() {
       return;
     }
     fetchUsers();
-  }, [user, isLoading, router, query]);
+  }, [user, sessionLoading, router, query, fetchUsers]);
 
-  if (isLoading || !user) return null;
+  if (sessionLoading || isLoading) {
+    return <LoadingState />;
+  }
 
   return (
     <div className="space-y-6">
@@ -65,7 +105,7 @@ export default function AdminUsersPage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search..."
+          placeholder="Search users..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-10"
@@ -84,19 +124,60 @@ export default function AdminUsersPage() {
                 <Badge variant={u.role === 'ADMIN' ? 'destructive' : 'secondary'}>
                   {u.role}
                 </Badge>
-                {u.isSuspended && <Badge variant="outline">Suspended</Badge>}
               </div>
               <Button
-                variant={u.isSuspended ? 'outline' : 'destructive'}
+                variant="destructive"
                 size="sm"
-                onClick={() => handleSuspend(u.id, !!u.isSuspended)}
+                className="cursor-pointer"
+                onClick={() => setDeleteTarget(u)}
+                disabled={u.id === user?.id} // Disable delete for self
               >
-                {u.isSuspended ? 'Unsuspend' : 'Suspend'}
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
               </Button>
             </CardHeader>
           </Card>
         ))}
       </div>
+
+      {users.length === 0 && (
+        <p className="text-center text-muted-foreground py-12">No users found</p>
+      )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => !isDeleting && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{deleteTarget?.name}</strong> ({deleteTarget?.email}).
+              <br /><br />
+              All associated data (bookings, reviews, tutor profile if applicable) will also be removed.
+              <br /><br />
+              <span className="text-destructive font-medium">This action cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting} className="cursor-pointer">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90 cursor-pointer"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete User'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

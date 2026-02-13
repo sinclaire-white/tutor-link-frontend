@@ -7,39 +7,55 @@ import { api } from '@/lib/axios';
 import { useSession } from '@/providers/SessionProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Application {
   id: string;
   user: { name: string; email: string };
   bio: string;
+  categories: { id: string; name: string }[];
+}
+
+// Consistent loading component
+function LoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-100">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    </div>
+  );
 }
 
 export default function AdminTutorApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
-  const { user, isLoading } = useSession();
+  const [isLoading, setIsLoading] = useState(true);  
+  const { user, isLoading: sessionLoading } = useSession(); 
   const router = useRouter();
 
-  // Function BEFORE useEffect
-  const fetchApplications = () => {
-    api.get('/tutors', { params: { approved: 'false' } })
-      .then(({ data }) => setApplications(data.data?.items || []))
-      .catch(console.error);
+  const fetchApplications = async () => {
+    try {
+      setIsLoading(true);
+      const { data } = await api.get('/tutors', { params: { approved: 'false' } });
+      setApplications(data.data?.items || []);
+    } catch (err) {
+      toast.error("Failed to load applications");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDecision = async (id: string, approved: boolean) => {
     try {
       await api.patch(`/tutors/${id}/approve`, { approved });
+      toast.success(approved ? 'Tutor Approved' : 'Tutor Rejected');
       fetchApplications();
-      toast.success(approved ? 'Approved' : 'Rejected');
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(err.response?.data?.message || "Action failed");
     }
   };
 
   useEffect(() => {
-    if (isLoading) return;
+    if (sessionLoading) return;
     if (!user) {
       router.push('/sign-in');
       return;
@@ -49,9 +65,12 @@ export default function AdminTutorApplicationsPage() {
       return;
     }
     fetchApplications();
-  }, [user, isLoading, router]);
+  }, [user, sessionLoading, router]);
 
-  if (isLoading || !user) return null;
+  // Consistent loading check
+  if (sessionLoading || isLoading) {
+    return <LoadingState />;
+  }
 
   return (
     <div className="space-y-6">

@@ -11,10 +11,15 @@ import {
   ClipboardList,
   User,
   Star,
-  LogOut 
+  LogOut,
+  GraduationCap,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { useSession } from '@/providers/SessionProvider';
 import { authClient } from '@/lib/auth-client';
+import { useTheme } from 'next-themes'; // Add this
+import { Button } from '@/components/ui/button'; // Add this
 
 const navigation = {
   STUDENT: [
@@ -33,6 +38,7 @@ const navigation = {
     { name: 'Overview', href: '/dashboard/admin', icon: LayoutDashboard },
     { name: 'Categories', href: '/dashboard/admin/categories', icon: FolderOpen },
     { name: 'Users', href: '/dashboard/admin/users', icon: Users },
+    { name: 'Tutors', href: '/dashboard/admin/tutors', icon: GraduationCap }, // Added tutors link
     { name: 'Bookings', href: '/dashboard/admin/bookings', icon: Calendar },
     { name: 'Applications', href: '/dashboard/admin/tutor-applications', icon: ClipboardList },
   ],
@@ -41,8 +47,8 @@ const navigation = {
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, isLoading } = useSession();
+  const { theme, setTheme } = useTheme(); // Add theme hook
 
-  // Don't show skeleton - let global loading handle it
   if (isLoading || !user) return null;
 
   const userRole = user.role as 'STUDENT' | 'TUTOR' | 'ADMIN';
@@ -51,6 +57,14 @@ export default function Sidebar() {
   const handleLogout = async () => {
     await authClient.signOut();
     window.location.href = '/sign-in';
+  };
+
+  // Fixed: Exact match for overview, startsWith for others
+  const isActive = (href: string) => {
+    if (href === `/dashboard/${userRole.toLowerCase()}`) {
+      return pathname === href; // Exact match for overview
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   return (
@@ -62,13 +76,13 @@ export default function Sidebar() {
 
       <nav className="flex-1 p-2 space-y-1">
         {items.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active = isActive(item.href);
           return (
             <Link
               key={item.name}
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive 
+                active 
                   ? 'bg-primary text-primary-foreground' 
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
@@ -80,7 +94,27 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t">
+      {/* Theme Toggle & Logout */}
+      <div className="p-4 border-t space-y-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="w-full justify-start gap-3 px-3"
+        >
+          {theme === 'dark' ? (
+            <>
+              <Sun className="h-4 w-4" />
+              Light Mode
+            </>
+          ) : (
+            <>
+              <Moon className="h-4 w-4" />
+              Dark Mode
+            </>
+          )}
+        </Button>
+        
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors"
