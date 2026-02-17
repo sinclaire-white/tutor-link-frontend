@@ -5,27 +5,22 @@ import Link from 'next/link';
 import { LogOut, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/providers/SessionProvider';
+import { LogoutDialog } from '@/components/auth/LogoutDialog';
 
 export function UserDropdown() {
-  const { user, isLoading, refetchSession } = useSession();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    try {
-      await authClient.signOut();
-      // Refetch the session to update the context
-      await refetchSession();
-      // Redirect to home
-      router.push('/');
-    } catch (error) {
-      console.error('Failed to sign out:', error);
-    }
-  };
+  const { user, isLoading } = useSession();
+  
 
   if (isLoading) {
     return (
@@ -49,12 +44,7 @@ export function UserDropdown() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        className="w-56"
-        align="end"
-        forceMount
-        asChild
-      >
+      <DropdownMenuContent className="w-56" align="end" forceMount asChild>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -64,7 +54,11 @@ export function UserDropdown() {
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">{userName}</p>
-              {userEmail && <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>}
+              {userEmail && (
+                <p className="text-xs leading-none text-muted-foreground">
+                  {userEmail}
+                </p>
+              )}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -75,10 +69,15 @@ export function UserDropdown() {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
-          </DropdownMenuItem>
+          {/* Using LogoutDialog with custom trigger */}
+          <LogoutDialog
+            trigger={
+              <div className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground w-full">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </div>
+            }
+          />
         </motion.div>
       </DropdownMenuContent>
     </DropdownMenu>

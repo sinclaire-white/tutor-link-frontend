@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 interface ProfileData {
   name: string;
@@ -52,6 +53,7 @@ export default function StudentProfilePage() {
           image: profileData.image,
         });
       } catch (error) {
+        console.error('Failed to load profile:', error);
         toast.error('Failed to load profile');
       } finally {
         setIsLoading(false);
@@ -68,6 +70,7 @@ export default function StudentProfilePage() {
       await api.patch('/users/me', formData);
       toast.success('Profile updated successfully');
     } catch (error) {
+        console.error('Failed to update profile:', error);
       toast.error('Failed to update profile');
     } finally {
       setIsSaving(false);
@@ -136,13 +139,14 @@ export default function StudentProfilePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image">Profile Image URL</Label>
-              <Input
-                id="image"
-                value={formData.image || ''}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+              <Label>Profile Image</Label>
+              <ImageUpload
+                value={formData.image}
+                onChange={(url) => setFormData({ ...formData, image: url })}
               />
+              <p className="text-xs text-muted-foreground">
+                Max 5MB. Supports JPEG, PNG, WEBP
+              </p>
             </div>
 
             <div className="flex gap-3 pt-4">

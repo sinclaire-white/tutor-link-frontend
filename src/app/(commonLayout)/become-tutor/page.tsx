@@ -144,10 +144,11 @@ export default function BecomeTutorPage() {
         availabilities: availabilities, // Send availability to backend
       });
 
-      toast.success("Application submitted! Redirecting...");
-      setTimeout(() => router.push("/dashboard"), 1500);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to submit application");
+      toast.success("Application submitted successfully!");
+      router.push("/pending-approval");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Failed to submit application");
     } finally {
       setSubmitting(false);
     }
