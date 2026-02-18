@@ -145,6 +145,7 @@ function BookingFormContent() {
           }
         }
       } catch (error) {
+        console.error("Failed to fetch tutor details:", error);
         toast.error("Failed to load tutor details");
         router.push("/tutors");
       } finally {
@@ -376,7 +377,7 @@ function BookingFormContent() {
                     <Clock className="h-5 w-5" />
                     Select Availability Slot
                   </CardTitle>
-                  <CardDescription>Choose when you'd like to schedule the session</CardDescription>
+                  <CardDescription>Choose when you&apos;d like to meet and when you&apod like to schedule the session</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {tutor.availabilities.length === 0 ? (

@@ -8,5 +8,5 @@ export function ClientNavbar() {
   const { isLoading, isLoggedIn } = useSession();
 
   // Show navbar immediately, it will handle loading state internally
-  return <Navbar isLoggedIn={isLoggedIn} />;
+  return <Navbar isLoggedIn={isLoggedIn} isLoading={isLoading} />;
 }

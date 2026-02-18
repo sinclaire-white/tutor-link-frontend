@@ -26,7 +26,7 @@ export function Stats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { data } = await api.get("/admin/stats");
+        const { data } = await api.get("/admin/stats/public");
         setStats(data.data);
       } catch (error) {
         console.error("Failed to fetch stats:", error);

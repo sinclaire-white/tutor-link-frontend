@@ -37,16 +37,29 @@ export function LogoutDialog({
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const handleLogout = async () => {
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default if inside a form/button
     setIsLoading(true);
+    
     try {
+      // 1. Perform sign out
       await authClient.signOut();
+      
+      // 2. Call optional callback
       onLogout?.();
+      
+      // 3. Initiate navigation
       router.push('/');
-      router.refresh(); // Force refresh to clear any cached states
+      router.refresh(); 
+
+      // 4. Intentional delay/Optimistic UI: 
+      // Don't close the dialog immediately. Let the router handle the page transition.
+      // If we close it now, the user sees the private page again before redirect.
+      // We will purely rely on the page unmounting.
+      
     } catch (error) {
       console.error('Failed to sign out:', error);
-    } finally {
+      // Only close on error so they can try again
       setIsLoading(false);
       setOpen(false);
     }

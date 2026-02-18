@@ -10,11 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, Calendar, Clock, User, Star } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import BookingCalendar from '@/components/dashboard/BookingCalendar';
 
 interface Booking {
   id: string;
-  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'ONGOING';
   scheduledAt: string;
   tutor: { name: string; email: string; image?: string };
   category: { name: string };
@@ -79,8 +79,18 @@ export default function StudentBookingsPage() {
 
   if (sessionLoading || isLoading) return <LoadingState />;
 
-  const upcoming = bookings.filter(b => ['PENDING', 'CONFIRMED'].includes(b.status));
+  const pending = bookings.filter(b => b.status === 'PENDING');
+  const upcoming = bookings.filter(b => ['CONFIRMED', 'ONGOING'].includes(b.status));
   const past = bookings.filter(b => ['COMPLETED', 'CANCELLED'].includes(b.status));
+
+  // Prepare calendar events - mapping scheduledAt to date property expected by Calendar
+  const calendarEvents = bookings
+    .filter(b => ['CONFIRMED', 'ONGOING', 'COMPLETED'].includes(b.status))
+    .map(b => ({
+      ...b,
+      date: b.scheduledAt,
+      tutorName: b.tutor.name
+    }));
 
   return (
     <div className="space-y-6">
@@ -91,23 +101,27 @@ export default function StudentBookingsPage() {
         </Button>
       </div>
 
-      {/* Upcoming Bookings */}
+       {/* Calendar View */}
+       <Card>
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Calendar</h2>
+          <BookingCalendar bookings={calendarEvents} />
+        </CardContent>
+      </Card>
+
+      {/* Upcoming Sessions (Confirmed) */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Upcoming Sessions</h2>
         {upcoming.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No upcoming bookings. <Link href="/tutors" className="text-primary hover:underline">Find a tutor</Link>
-            </CardContent>
-          </Card>
+          <p className="text-muted-foreground">No upcoming confirmed sessions.</p>
         ) : (
           <div className="space-y-3">
             {upcoming.map((booking) => (
-              <Card key={booking.id}>
+              <Card key={booking.id} className="border-l-4 border-l-green-500">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
+                       <div className="flex items-center gap-2">
                         <Badge className={statusColors[booking.status]}>
                           {booking.status}
                         </Badge>
@@ -132,16 +146,59 @@ export default function StudentBookingsPage() {
                         </span>
                       </div>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Pending Requests */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">Pending Requests</h2>
+        {pending.length === 0 ? (
+          <p className="text-muted-foreground">No pending requests.</p>
+        ) : (
+          <div className="space-y-3">
+            {pending.map((booking) => (
+              <Card key={booking.id} className="border-l-4 border-l-yellow-500">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge className={statusColors[booking.status]}>
+                          {booking.status}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {booking.category.name}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{booking.tutor.name}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                         <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(booking.scheduledAt).toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
                     
-                    {booking.status === 'PENDING' && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleCancel(booking.id)}
-                      >
-                        Cancel
-                      </Button>
-                    )}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleCancel(booking.id)}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

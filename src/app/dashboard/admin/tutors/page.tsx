@@ -8,6 +8,8 @@ import { useSession } from "@/providers/SessionProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Loader2, Trash2, Star, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -28,6 +30,7 @@ interface Tutor {
   bio?: string;
   hourlyRate: number;
   isApproved: boolean;
+  isFeatured: boolean;
   categories: { id: string; name: string }[];
   _count?: { reviews: number };
 }
@@ -76,6 +79,22 @@ export default function AdminTutorsPage() {
     }
   };
 
+  const toggleFeatured = async (tutorId: string, currentStatus: boolean) => {
+    try {
+      await api.patch(`/tutors/${tutorId}/featured`, {
+        featured: !currentStatus,
+      });
+      toast.success(
+        !currentStatus
+          ? "Tutor added to featured list"
+          : "Tutor removed from featured list"
+      );
+      fetchTutors();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to update featured status");
+    }
+  };
+
   useEffect(() => {
     if (sessionLoading) return;
     if (!user) {
@@ -110,12 +129,20 @@ export default function AdminTutorsPage() {
                     {tutor.user.email}
                   </p>
                 </div>
-                <Badge
-                  variant={tutor.isApproved ? "default" : "secondary"}
-                  className="w-fit"
-                >
-                  {tutor.isApproved ? "Approved" : "Pending"}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={tutor.isApproved ? "default" : "secondary"}
+                    className="w-fit"
+                  >
+                    {tutor.isApproved ? "Approved" : "Pending"}
+                  </Badge>
+                  {tutor.isFeatured && (
+                    <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-700 border-yellow-300">
+                      <Star className="h-3 w-3 mr-1 fill-current" />
+                      Featured
+                    </Badge>
+                  )}
+                </div>
               </div>
             </CardHeader>
 
@@ -148,6 +175,20 @@ export default function AdminTutorsPage() {
                   {tutor._count?.reviews || 0} reviews
                 </span>
               </div>
+
+              {/* Featured Toggle - only for approved tutors */}
+              {tutor.isApproved && (
+                <div className="flex items-center justify-between mb-3 p-3 bg-muted/50 rounded-md">
+                  <Label htmlFor={`featured-${tutor.id}`} className="text-sm font-medium cursor-pointer">
+                    Featured Tutor
+                  </Label>
+                  <Switch
+                    id={`featured-${tutor.id}`}
+                    checked={tutor.isFeatured}
+                    onCheckedChange={() => toggleFeatured(tutor.id, tutor.isFeatured)}
+                  />
+                </div>
+              )}
 
               {/* Button - always at bottom */}
               <Button

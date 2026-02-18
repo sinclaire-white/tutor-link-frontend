@@ -14,6 +14,7 @@ interface Tutor {
   id: string;
   userId: string;
   hourlyRate: number;
+  isFeatured?: boolean;
   user: {
     name: string;
     image?: string;
@@ -31,8 +32,10 @@ export function FeaturedTutors() {
   useEffect(() => {
     const fetchTutors = async () => {
       try {
-        const { data } = await api.get("/tutors/public?limit=4");
-        setTutors(data.data || []);
+        const { data } = await api.get("/tutors?perPage=4&approved=true");
+        // Filter for featured tutors only
+        const featuredTutors = data.data?.items?.filter((t: Tutor) => t.isFeatured) || [];
+        setTutors(featuredTutors);
       } catch (error) {
         console.error("Failed to fetch tutors:", error);
       } finally {

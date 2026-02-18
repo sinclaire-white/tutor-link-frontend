@@ -33,10 +33,8 @@ export default function Home() {
           <FeaturedTutors />
         </div>
         
-        <div className="bg-muted/30 w-full py-16">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-            <BecomeTutorCTA />
-          </div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-8 md:py-12">
+          <BecomeTutorCTA />
         </div>
         
         <Stats />
@@ -49,10 +47,8 @@ export default function Home() {
           <FAQ />
         </div>
         
-        <div className="bg-muted/30 w-full py-16">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-            <NewsLetter />
-          </div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-8 md:py-12">
+          <NewsLetter />
         </div>
       </div>
     </div>

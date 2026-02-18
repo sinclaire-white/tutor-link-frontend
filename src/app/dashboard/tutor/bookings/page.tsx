@@ -17,10 +17,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import BookingCalendar from '@/components/dashboard/BookingCalendar';
 
 interface Booking {
   id: string;
-  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "ONGOING";
   scheduledAt: string;
   student: { name: string; email: string; image?: string };
   category: { name: string };
@@ -116,14 +117,29 @@ export default function TutorBookingsPage() {
   if (sessionLoading || isLoading) return <LoadingState />;
 
   const pending = bookings.filter((b) => b.status === "PENDING");
-  const upcoming = bookings.filter((b) => b.status === "CONFIRMED");
-  const past = bookings.filter((b) =>
-    ["COMPLETED", "CANCELLED"].includes(b.status),
-  );
+  const upcoming = bookings.filter((b) => ["CONFIRMED", "ONGOING"].includes(b.status));
+  const past = bookings.filter((b) => ["COMPLETED", "CANCELLED"].includes(b.status));
+
+  // Prepare calendar events
+  const calendarEvents = bookings
+    .filter(b => ['CONFIRMED', 'ONGOING', 'COMPLETED'].includes(b.status))
+    .map(b => ({
+      ...b,
+      date: b.scheduledAt,
+      studentName: b.student.name
+    }));
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Bookings</h1>
+
+       {/* Calendar View */}
+       <Card>
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Teaching Schedule</h2>
+          <BookingCalendar bookings={calendarEvents} />
+        </CardContent>
+      </Card>
 
       {/* Pending Requests */}
       {pending.length > 0 && (

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 
 export function NewsLetter() {
   return (
-    <section className="bg-muted/50 py-16 md:py-20 border-t">
+    <section className="bg-muted/50 py-16 md:py-20 rounded-3xl overflow-hidden border">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-3xl font-bold mb-4">Stay Updated</h2>
         <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">

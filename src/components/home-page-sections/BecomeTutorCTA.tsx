@@ -2,37 +2,21 @@
 
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { useSession } from "@/providers/SessionProvider"; 
 
 export function BecomeTutorCTA() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const result = await authClient.getSession();
-        const sessionData = result?.data;
-        if (sessionData?.user) {
-          setUser(sessionData.user);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
+  const { user, isLoading } = useSession();
 
   // Hide this section if user is already a tutor
-  if (!loading && user?.role === 'TUTOR') {
+  // Use optionally chaining for safety
+  const isTutor = user?.role?.toUpperCase() === "TUTOR";
+  
+  if (isTutor) {
     return null;
   }
 
   return (
-    <section className="py-16 md:py-20 bg-muted/40">
+    <section className="py-16 md:py-20 bg-muted/40 rounded-3xl overflow-hidden relative">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-3xl md:text-4xl font-bold mb-6">
           Ready to Share Your Knowledge?
