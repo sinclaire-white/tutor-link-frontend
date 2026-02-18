@@ -20,7 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 
 
 const signInSchema = z.object({
@@ -96,11 +96,11 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-linear-to-br from-background to-muted/20">
-      <Card className="w-full max-w-md shadow-xl border-border/50">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted/30">
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2 text-center pb-6">
-          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-            <Mail className="w-6 h-6 text-primary" />
+          <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+            <Mail className="w-7 h-7 text-primary" />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">
             Welcome back
@@ -124,6 +124,7 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
                   type="email"
                   placeholder="name@example.com"
                   className="pl-10 h-11"
+                  disabled={isLoading}
                   {...register("email")}
                 />
               </div>
@@ -138,12 +139,6 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
                 <Label htmlFor="password" className="text-sm font-medium">
                   Password
                 </Label>
-                {/* <Link
-                  href="/forgot-password"
-                  className="text-sm text-primary hover:underline font-medium"
-                >
-                  Forgot password?
-                </Link> */}
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -152,12 +147,14 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   className="pl-10 pr-10 h-11"
+                  disabled={isLoading}
                   {...register("password")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -173,7 +170,11 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
             {/* Remember Me */}
             <div className="flex items-center space-x-2">
-              <Checkbox id="rememberMe" {...register("rememberMe")} />
+              <Checkbox 
+                id="rememberMe" 
+                {...register("rememberMe")} 
+                disabled={isLoading}
+              />
               <Label
                 htmlFor="rememberMe"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -188,7 +189,14 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
               className="w-full h-11 text-base font-medium"
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
 
@@ -209,6 +217,7 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
             variant="outline"
             type="button"
             className="w-full h-11 font-medium"
+            disabled={isLoading}
             onClick={async () => {
               try {
                 await authClient.signIn.social({

@@ -7,10 +7,12 @@ import { api } from '@/lib/axios';
 import { useSession } from '@/providers/SessionProvider';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Trash2, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Search, Trash2, Loader2, Mail, Calendar, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +29,9 @@ interface User {
   name: string;
   email: string;
   role: string;
+  image?: string;
+  phoneNumber?: string;
+  createdAt?: string;
 }
 
 function LoadingState() {
@@ -99,49 +104,114 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Users</h1>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6 p-6 max-w-6xl mx-auto"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-8 w-8 text-primary" />
+            User Management
+          </h1>
+          <p className="text-muted-foreground mt-1">Manage and monitor all platform users</p>
+        </div>
+        <Badge variant="outline" className="text-lg px-4 py-2">
+          {users.length} Total Users
+        </Badge>
+      </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
-          placeholder="Search users..."
+          placeholder="Search by name or email..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-10"
+          className="pl-10 h-12 text-base"
         />
       </div>
 
-      <div className="space-y-3">
-        {users.map((u) => (
-          <Card key={u.id}>
-            <CardHeader className="flex flex-row items-center justify-between py-4">
-              <div className="flex items-center gap-3">
-                <div>
-                  <CardTitle className="text-base">{u.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{u.email}</p>
+      <div className="grid gap-4">
+        {users.map((u, index) => (
+          <motion.div
+            key={u.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+          >
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <Avatar className="h-16 w-16 border-2 border-primary/20">
+                      <AvatarImage src={u.image} alt={u.name} />
+                      <AvatarFallback className="text-lg font-semibold bg-linear-to-br from-primary/20 to-primary/10">
+                        {u.name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CardTitle className="text-xl truncate">{u.name}</CardTitle>
+                        <Badge 
+                          variant={u.role === 'ADMIN' ? 'destructive' : u.role === 'TUTOR' ? 'default' : 'secondary'}
+                          className="shrink-0"
+                        >
+                          {u.role}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Mail className="h-4 w-4" />
+                          <span className="truncate">{u.email}</span>
+                        </div>
+                        {u.phoneNumber && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>📱</span>
+                            <span>{u.phoneNumber}</span>
+                          </div>
+                        )}
+                        {u.createdAt && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>Joined {new Date(u.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setDeleteTarget(u)}
+                    disabled={u.id === user?.id}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
                 </div>
-                <Badge variant={u.role === 'ADMIN' ? 'destructive' : 'secondary'}>
-                  {u.role}
-                </Badge>
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="cursor-pointer"
-                onClick={() => setDeleteTarget(u)}
-                disabled={u.id === user?.id} // Disable delete for self
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </CardHeader>
-          </Card>
+              </CardHeader>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
-      {users.length === 0 && (
-        <p className="text-center text-muted-foreground py-12">No users found</p>
+      {users.length === 0 && !isLoading && (
+        <Card className="p-12">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-lg text-muted-foreground">No users found</p>
+            <p className="text-sm text-muted-foreground mt-1">Try adjusting your search query</p>
+          </div>
+        </Card>
       )}
 
       {/* Delete Confirmation */}
@@ -178,6 +248,6 @@ export default function AdminUsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </motion.div>
   );
 }

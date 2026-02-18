@@ -27,7 +27,7 @@ const dashboardLinks = [
 const fakeUser = {
   name: 'John Doe',
   email: 'john@example.com',
-  avatar: '/placeholder-avatar.jpg',
+  avatar: undefined,
 };
 
 interface MobileMenuProps {

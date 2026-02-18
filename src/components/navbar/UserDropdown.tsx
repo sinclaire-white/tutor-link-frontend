@@ -32,7 +32,7 @@ export function UserDropdown() {
 
   const userName = user?.name || 'User';
   const userEmail = user?.email || '';
-  const userAvatar = user?.image || '/placeholder-avatar.jpg';
+  const userAvatar = user?.image;
 
   return (
     <DropdownMenu>

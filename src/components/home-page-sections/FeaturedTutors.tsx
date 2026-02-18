@@ -1,35 +1,152 @@
+"use client";
 
-const tutors = [
-  { name: 'Sarah M.', subject: 'Mathematics', rating: 4.9, reviews: 127, price: 28, avatar: '/avatars/sarah.jpg' },
-  { name: 'Rahim K.', subject: 'English & IELTS', rating: 5.0, reviews: 89, price: 22, avatar: '/avatars/rahim.jpg' },
-  // ... more
-]
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { api } from "@/lib/axios";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { TutorCardSkeleton } from "@/components/ui/skeletons/CardSkeleton";
+import { Star, ArrowRight } from "lucide-react";
+
+interface Tutor {
+  id: string;
+  userId: string;
+  hourlyRate: number;
+  user: {
+    name: string;
+    image?: string;
+  };
+  categories: Array<{
+    id: string;
+    name: string;
+  }>;
+}
 
 export function FeaturedTutors() {
+  const [tutors, setTutors] = useState<Tutor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTutors = async () => {
+      try {
+        const { data } = await api.get("/tutors/public?limit=4");
+        setTutors(data.data || []);
+      } catch (error) {
+        console.error("Failed to fetch tutors:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTutors();
+  }, []);
+
   return (
-    <section className="bg-muted/40 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-16">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-10">Featured Tutors</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {tutors.map((tutor) => (
-            <div key={tutor.name} className="bg-card rounded-xl overflow-hidden border shadow-sm hover:shadow-md transition">
-              <div className="aspect-4/3 bg-muted relative">
-                {/* <Image src={tutor.avatar} alt={tutor.name} fill className="object-cover" /> */}
-              </div>
-              <div className="p-5">
-                <h3 className="font-semibold">{tutor.name}</h3>
-                <p className="text-sm text-muted-foreground">{tutor.subject}</p>
-                <div className="flex items-center gap-2 mt-2 text-sm">
-                  <span className="text-yellow-500">★</span>
-                  <span>{tutor.rating}</span>
-                  <span className="text-muted-foreground">({tutor.reviews})</span>
-                </div>
-                <div className="mt-4 font-medium">${tutor.price}/hr</div>
-              </div>
-            </div>
+    <section>
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold mb-3">
+          Featured Tutors
+        </h2>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          Connect with expert tutors ready to help you achieve your learning goals
+        </p>
+      </div>
+
+      {isLoading ? (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <TutorCardSkeleton key={i} />
           ))}
         </div>
-      </div>
+      ) : tutors.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground mb-4">No tutors available yet</p>
+          <Button asChild>
+            <Link href="/become-tutor">Become a tutor</Link>
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {tutors.map((tutor) => (
+              <Card 
+                key={tutor.id}
+                className="group hover:shadow-lg transition-all duration-200 overflow-hidden border hover:border-primary/50"
+              >
+                <CardContent className="p-0">
+                  <div className="p-6 pb-4">
+                    <div className="flex items-start gap-3 mb-4">
+                      <Avatar className="h-12 w-12 border-2 border-muted">
+                        <AvatarImage src={tutor.user.image} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {tutor.user.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base truncate">
+                          {tutor.user.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                          <span className="font-medium">New</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {tutor.categories.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {tutor.categories.slice(0, 2).map((cat) => (
+                          <Badge 
+                            key={cat.id} 
+                            variant="secondary" 
+                            className="text-xs font-normal"
+                          >
+                            {cat.name}
+                          </Badge>
+                        ))}
+                        {tutor.categories.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{tutor.categories.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-3 border-t">
+                      <div>
+                        <span className="text-2xl font-bold text-primary">
+                          ${tutor.hourlyRate}
+                        </span>
+                        <span className="text-sm text-muted-foreground">/hr</span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        asChild
+                        className="group-hover:bg-primary group-hover:text-primary-foreground"
+                      >
+                        <Link href={`/tutors/${tutor.id}`}>
+                          View
+                          <ArrowRight className="ml-1 h-3 w-3" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/tutors">
+                Browse All Tutors
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </>
+      )}
     </section>
-  )
+  );
 }

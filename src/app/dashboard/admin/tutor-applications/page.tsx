@@ -29,6 +29,7 @@ function LoadingState() {
 export default function AdminTutorApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);  
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const { user, isLoading: sessionLoading } = useSession(); 
   const router = useRouter();
 
@@ -46,11 +47,14 @@ export default function AdminTutorApplicationsPage() {
 
   const handleDecision = async (id: string, approved: boolean) => {
     try {
+      setProcessingId(id);
       await api.patch(`/tutors/${id}/approve`, { approved });
       toast.success(approved ? 'Tutor Approved' : 'Tutor Rejected');
       fetchApplications();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Action failed");
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -89,13 +93,40 @@ export default function AdminTutorApplicationsPage() {
               <CardContent className="space-y-4">
                 <p className="text-sm">{app.bio}</p>
                 <div className="flex gap-2">
-                  <Button onClick={() => handleDecision(app.id, true)} className="flex-1">
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Approve
+                  <Button 
+                    onClick={() => handleDecision(app.id, true)} 
+                    className="flex-1"
+                    disabled={processingId === app.id}
+                  >
+                    {processingId === app.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve
+                      </>
+                    )}
                   </Button>
-                  <Button variant="destructive" onClick={() => handleDecision(app.id, false)} className="flex-1">
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => handleDecision(app.id, false)} 
+                    className="flex-1"
+                    disabled={processingId === app.id}
+                  >
+                    {processingId === app.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>

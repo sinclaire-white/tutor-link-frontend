@@ -1,4 +1,4 @@
-// app/dashboard/student/profile/page.tsx
+// app/dashboard/admin/profile/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -10,11 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Edit, Save, X, User, Mail, Phone, Calendar, Check } from 'lucide-react';
+import { Loader2, Edit, Save, X, User, Mail, Phone, Calendar, Check, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
 
 interface ProfileData {
   name: string;
@@ -22,9 +21,10 @@ interface ProfileData {
   age?: number;
   phoneNumber?: string;
   image?: string;
+  role: string;
 }
 
-export default function StudentProfilePage() {
+export default function AdminProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,10 +38,10 @@ export default function StudentProfilePage() {
   useEffect(() => {
     if (sessionLoading) return;
     if (!user) {
-      router.push('/sign-in?redirect=/dashboard/student/profile');
+      router.push('/sign-in?redirect=/dashboard/admin/profile');
       return;
     }
-    if (user.role !== 'STUDENT') {
+    if (user.role !== 'ADMIN') {
       router.push(`/dashboard/${user.role?.toLowerCase()}/profile`);
       return;
     }
@@ -124,8 +124,11 @@ export default function StudentProfilePage() {
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">My Profile</h1>
-          <p className="text-muted-foreground mt-1">Manage your personal information</p>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-8 w-8 text-primary" />
+            Admin Profile
+          </h1>
+          <p className="text-muted-foreground mt-1">Manage your administrator account</p>
         </div>
         <AnimatePresence mode="wait">
           {showSuccess && (
@@ -143,7 +146,7 @@ export default function StudentProfilePage() {
       </div>
       
       <Card className="overflow-hidden">
-        <CardHeader>
+        <CardHeader className="bg-linear-to-r from-primary/10 via-primary/5 to-background">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
@@ -172,13 +175,16 @@ export default function StudentProfilePage() {
                 <div className="flex items-center gap-6 p-4 bg-muted/50 rounded-lg">
                   <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
                     <AvatarImage src={profile?.image} alt={profile?.name} />
-                    <AvatarFallback className="text-2xl">
+                    <AvatarFallback className="text-2xl bg-linear-to-br from-primary/20 to-primary/10">
                       {profile?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <h3 className="text-2xl font-bold">{profile?.name}</h3>
-                    <p className="text-muted-foreground">Student Account</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Shield className="h-4 w-4 text-destructive" />
+                      <p className="text-destructive font-semibold">Administrator</p>
+                    </div>
                   </div>
                 </div>
 
@@ -271,7 +277,7 @@ export default function StudentProfilePage() {
                     <Input
                       id="age"
                       type="number"
-                      min="13"
+                      min="18"
                       max="120"
                       value={formData.age || ''}
                       onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || undefined })}

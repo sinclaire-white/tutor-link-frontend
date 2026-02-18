@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, DollarSign, Star } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Tutor {
   id: string;
@@ -96,9 +97,21 @@ export default function PublicTutorsPage() {
                   <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
                     <CardHeader>
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">
-                          {tutor.user.name.charAt(0).toUpperCase()}
-                        </div>
+                        {tutor.user.image ? (
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0">
+                            <Image
+                              src={tutor.user.image}
+                              alt={tutor.user.name}
+                              fill
+                              sizes="48px"
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary shrink-0">
+                            {tutor.user.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
                           <CardTitle className="text-lg truncate">
                             {tutor.user.name}

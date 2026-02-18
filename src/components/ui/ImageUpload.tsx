@@ -71,6 +71,7 @@ export function ImageUpload({
             src={preview}
             alt="Preview"
             fill
+            sizes="(max-width: 768px) 100vw, 600px"
             className="object-cover rounded-lg border-2 shadow-sm"
           />
           {!isUploading && (
