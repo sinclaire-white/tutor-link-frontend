@@ -39,27 +39,27 @@ interface TutorData {
   availabilities: AvailabilitySlot[];
 }
 
-// Helper to get next valid date for a day of week
+// Helper to get next valid date for a day of week (all UTC to avoid timezone shifts)
 function getNextDateForDay(dayName: string, fromDate = new Date()): Date {
   const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
   const targetDay = days.indexOf(dayName.toUpperCase());
-  
+
   if (targetDay === -1) return fromDate;
-  
-  const result = new Date(fromDate);
-  result.setHours(0, 0, 0, 0);
-  
+
+  // Work in UTC so .toISOString().split('T')[0] never rolls back a day
+  const result = new Date(Date.UTC(fromDate.getUTCFullYear(), fromDate.getUTCMonth(), fromDate.getUTCDate()));
+
   // Start from tomorrow to ensure booking is in future
-  result.setDate(result.getDate() + 1);
-  
-  const currentDay = result.getDay();
+  result.setUTCDate(result.getUTCDate() + 1);
+
+  const currentDay = result.getUTCDay();
   let daysToAdd = targetDay - currentDay;
-  
+
   if (daysToAdd < 0) {
     daysToAdd += 7;
   }
-  
-  result.setDate(result.getDate() + daysToAdd);
+
+  result.setUTCDate(result.getUTCDate() + daysToAdd);
   return result;
 }
 
@@ -201,12 +201,12 @@ function BookingFormContent() {
   const duration = calculateDuration();
   const totalCost = tutor ? (Number(tutor.hourlyRate) * duration).toFixed(2) : "0.00";
 
-  // Validate if selected date matches the availability day
+  // Validate if selected date matches the availability day (use UTC to avoid off-by-one)
   const isDateValid = (): boolean => {
     if (!selectedDate || !selectedSlot) return false;
-    const date = new Date(selectedDate);
+    const date = new Date(`${selectedDate}T00:00:00.000Z`);
     const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-    const dayName = days[date.getDay()];
+    const dayName = days[date.getUTCDay()];
     return dayName === selectedSlot.dayOfWeek.toUpperCase();
   };
 
@@ -255,9 +255,8 @@ function BookingFormContent() {
     setIsSubmitting(true);
 
     try {
-      const [hours, minutes] = startTime.split(":").map(Number);
-      const scheduledDate = new Date(selectedDate);
-      scheduledDate.setHours(hours, minutes, 0, 0);
+      // Build scheduledAt as a UTC timestamp so backend getHours() matches stored slot hours
+      const scheduledDate = new Date(`${selectedDate}T${startTime}:00.000Z`);
 
       await api.post("/bookings", {
         tutorId: tutor?.userId,
