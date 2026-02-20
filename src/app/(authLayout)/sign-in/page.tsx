@@ -78,14 +78,17 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
       }
 
       toast.success("Welcome back!");
-      
+
       // Wait for session to be ready, then redirect
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Force session refresh before redirect
-      await authClient.getSession();
-      
-      router.push(redirectUrl);
+
+      // Get session to determine role for smart redirect
+      const session = await authClient.getSession();
+      const role = (session?.data?.user as any)?.role?.toLowerCase() || 'student';
+
+      // If a specific ?redirect= param was provided use it, otherwise go to role dashboard
+      const destination = redirectUrl !== '/dashboard' ? redirectUrl : `/dashboard/${role}`;
+      router.push(destination);
       router.refresh();
       
     } catch (error) {

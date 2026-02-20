@@ -60,7 +60,8 @@ export function EditCategoryDialog({
     try {
       await api.patch(`/categories/${category.id}`, {
         name: name.trim(),
-        description: description.trim() || undefined,
+        // Send null explicitly so the backend clears an existing description
+        description: description.trim() || null,
       });
 
       onSuccess();

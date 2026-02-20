@@ -47,7 +47,9 @@ function LoadingState() {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [query, setQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [page, setPage] = useState(1);
@@ -57,12 +59,21 @@ export default function AdminUsersPage() {
   const { user, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
-   const fetchUsers = useCallback(async () => {
+  // Debounce: only fire API after 400 ms of no typing
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQuery(query);
+      setPage(1); // reset page on new search
+    }, 400);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const fetchUsers = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setIsFetching(true);
       const { data } = await api.get('/users', { 
         params: { 
-          q: query,
+          q: debouncedQuery,
           page,
           perPage: 10
         } 
@@ -73,9 +84,10 @@ export default function AdminUsersPage() {
     } catch (err: any) {
       toast.error('Failed to load users');
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
+      setIsInitialLoad(false);
     }
-  }, [query, page]);
+  }, [debouncedQuery, page]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -111,14 +123,13 @@ export default function AdminUsersPage() {
       return;
     }
     fetchUsers();
-  }, [user, sessionLoading, router, query, page, fetchUsers]);
+  }, [user, sessionLoading, router, fetchUsers]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
-    setPage(1); // Reset to page 1 on search
   };
 
-  if (sessionLoading || isLoading) {
+  if (sessionLoading || isInitialLoad) {
     return <LoadingState />;
   }
 
@@ -148,8 +159,11 @@ export default function AdminUsersPage() {
           placeholder="Search by name or email..."
           value={query}
           onChange={handleSearch}
-          className="pl-10 h-12 text-base"
+          className="pl-10 pr-10 h-12 text-base"
         />
+        {isFetching && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+        )}
       </div>
 
       <div className="grid gap-4">
@@ -223,7 +237,7 @@ export default function AdminUsersPage() {
         ))}
       </div>
 
-      {users.length === 0 && !isLoading && (
+      {users.length === 0 && !isFetching && (
         <Card className="p-12">
           <div className="text-center">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
@@ -236,12 +250,12 @@ export default function AdminUsersPage() {
       )}
 
       {/* Pagination */}
-      {!isLoading && users.length > 0 && (
+      {!isFetching && users.length > 0 && (
         <PaginationControls
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          isLoading={isLoading}
+          isLoading={isFetching}
         />
       )}
 

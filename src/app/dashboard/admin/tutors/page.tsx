@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2, Trash2, Star, DollarSign } from "lucide-react";
+import { Loader2, Trash2, Star, DollarSign, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -47,7 +48,10 @@ function LoadingState() {
 
 export default function AdminTutorsPage() {
   const [tutors, setTutors] = useState<Tutor[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Tutor | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [page, setPage] = useState(1);
@@ -57,11 +61,21 @@ export default function AdminTutorsPage() {
   const { user, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
   const fetchTutors = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setIsFetching(true);
       const { data } = await api.get("/tutors", { 
         params: { 
+          q: debouncedQuery || undefined,
           page,
           perPage: 10
         }
@@ -69,13 +83,13 @@ export default function AdminTutorsPage() {
       setTutors(data.data?.items || []);
       setTotalPages(data.data?.meta?.totalPages || 1);
       setTotalTutors(data.data?.meta?.total || 0);
-
     } catch (err: any) {
       toast.error("Failed to load tutors");
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
+      setIsInitialLoad(false);
     }
-  }, [page]);
+  }, [debouncedQuery, page]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -122,13 +136,38 @@ export default function AdminTutorsPage() {
     fetchTutors();
   }, [user, sessionLoading, router, fetchTutors]);
 
-  if (sessionLoading || isLoading) {
+  if (sessionLoading || isInitialLoad) {
     return <LoadingState />;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">All Tutors</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">All Tutors</h1>
+        <span className="text-muted-foreground text-sm">{totalTutors} total</span>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <Input
+          placeholder="Search by name or email..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 pr-10 h-12 text-base"
+        />
+        {searchQuery && !isFetching && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+        {isFetching && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+        )}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tutors.map((tutor) => (
