@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/accordion";
 
 const navLinks = [
+  { label: 'Home', href: '/' },
   { label: 'Tutors', href: '/tutors' },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },

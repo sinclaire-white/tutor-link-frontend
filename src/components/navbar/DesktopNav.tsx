@@ -33,6 +33,20 @@ export function DesktopNav() {
           <NavigationMenuItem>
             <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
               <Link
+                href="/"
+                className={cn(
+                  "text-sm font-medium transition-colors",
+                  "hover:text-primary data-active:text-primary data-active:font-semibold"
+                )}
+              >
+                Home
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <Link
                 href="/tutors"
                 className={cn(
                   "text-sm font-medium transition-colors",
