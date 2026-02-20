@@ -10,45 +10,55 @@ const faqItems = [
   {
     question: "How do I book a tutor?",
     answer:
-      "Browse tutors or search by subject → select preferred time slot → confirm booking. Payment is held until session completion.",
+      "Browse verified tutors by subject or price, check their availability, and select a time slot that works for you. Secure your booking instantly.",
   },
   {
-    question: "Are all tutors verified?",
+    question: "Are the tutors verified?",
     answer:
-      "Yes. Every tutor goes through ID verification, qualification check, and interview before appearing on the platform.",
+      "Yes. Every tutor undergoes a strict verification process including identity checks and qualification reviews to ensure quality learning.",
   },
   {
-    question: "What happens if I'm not satisfied with a session?",
+    question: "What if I'm not satisfied with a session?",
     answer:
-      "We offer session credit or refund in case of genuine dissatisfaction. Just contact support within 24 hours.",
+      "Your satisfaction is our priority. If a session doesn't meet expectations, contact support within 24 hours for a credit or refund.",
   },
   {
     question: "Can I take trial lessons?",
     answer:
-      "Many tutors offer discounted or free 30-minute trial sessions. You can filter for tutors who provide trials.",
+      "Many tutors offer discounted trial sessions. Look for the 'Trial Available' badge on tutor profiles to test the waters before committing.",
   },
   {
     question: "Do you offer group classes?",
     answer:
-      "Yes — many tutors conduct small group sessions (2–6 students) at reduced per-person rates.",
+      "Yes! Tutors often conduct small group sessions at reduced rates, perfect for learning with peers in a collaborative environment.",
+  },
+  {
+    question: "How do payments work?",
+    answer:
+      "We use a secure payment system. You are charged only after you confirm a booking, and funds are held in escrow until the lesson is complete.",
   },
 ];
 
 export function FAQ() {
   return (
-    <section className="py-16 md:py-20">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+    <section>
+      <div className="text-center mb-12 space-y-4">
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
           Frequently Asked Questions
         </h2>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          Everything you need to know about TutorLink.
+        </p>
+      </div>
 
+      <div className="max-w-3xl mx-auto">
         <Accordion type="single" collapsible className="w-full">
           {faqItems.map((item, i) => (
             <AccordionItem key={i} value={`item-${i}`}>
-              <AccordionTrigger className="text-left text-lg font-medium">
+              <AccordionTrigger className="text-left text-base font-medium">
                 {item.question}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-muted-foreground text-base leading-relaxed">
                 {item.answer}
               </AccordionContent>
             </AccordionItem>

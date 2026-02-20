@@ -32,8 +32,8 @@ export function Footer() {
             <h3 className="font-semibold text-foreground mb-4">For Students</h3>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li><FooterLink href="/tutors">Find Tutors</FooterLink></li>
-              <li><FooterLink href="/#how-it-works">How It Works</FooterLink></li>
-              <li><FooterLink href="/#categories">Online Classes</FooterLink></li>
+              <li><FooterLink href="/dashboard/student/bookings">My Bookings</FooterLink></li>
+              <li><FooterLink href="/dashboard/student/profile">Student Profile</FooterLink></li>
               <li><FooterLink href="/#testimonials">Success Stories</FooterLink></li>
             </ul>
           </div>

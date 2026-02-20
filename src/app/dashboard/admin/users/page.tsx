@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { api } from '@/lib/axios';
 import { useSession } from '@/providers/SessionProvider';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { PaginationControls } from '@/components/ui/pagination-controls';
 
 interface User {
   id: string;
@@ -48,20 +50,32 @@ export default function AdminUsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+
   const { user, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
    const fetchUsers = useCallback(async () => {
     try {
       setIsLoading(true);
-      const { data } = await api.get('/users', { params: { q: query } });
+      const { data } = await api.get('/users', { 
+        params: { 
+          q: query,
+          page,
+          perPage: 10
+        } 
+      });
       setUsers(data.data?.items || []);
+      setTotalPages(data.data?.meta?.totalPages || 1);
+      setTotalUsers(data.data?.meta?.total || 0);
     } catch (err: any) {
       toast.error('Failed to load users');
     } finally {
       setIsLoading(false);
     }
-  }, [query]);
+  }, [query, page]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -97,7 +111,12 @@ export default function AdminUsersPage() {
       return;
     }
     fetchUsers();
-  }, [user, sessionLoading, router, query, fetchUsers]);
+  }, [user, sessionLoading, router, query, page, fetchUsers]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    setPage(1); // Reset to page 1 on search
+  };
 
   if (sessionLoading || isLoading) {
     return <LoadingState />;
@@ -119,7 +138,7 @@ export default function AdminUsersPage() {
           <p className="text-muted-foreground mt-1">Manage and monitor all platform users</p>
         </div>
         <Badge variant="outline" className="text-lg px-4 py-2">
-          {users.length} Total Users
+          {totalUsers} Total Users
         </Badge>
       </div>
 
@@ -128,7 +147,7 @@ export default function AdminUsersPage() {
         <Input
           placeholder="Search by name or email..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleSearch}
           className="pl-10 h-12 text-base"
         />
       </div>
@@ -153,7 +172,9 @@ export default function AdminUsersPage() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <CardTitle className="text-xl truncate">{u.name}</CardTitle>
+                        <Link href={`/profile/${u.id}`}>
+                            <CardTitle className="text-xl truncate hover:underline cursor-pointer">{u.name}</CardTitle>
+                        </Link>
                         <Badge 
                           variant={u.role === 'ADMIN' ? 'destructive' : u.role === 'TUTOR' ? 'default' : 'secondary'}
                           className="shrink-0"
@@ -212,6 +233,16 @@ export default function AdminUsersPage() {
             <p className="text-sm text-muted-foreground mt-1">Try adjusting your search query</p>
           </div>
         </Card>
+      )}
+
+      {/* Pagination */}
+      {!isLoading && users.length > 0 && (
+        <PaginationControls
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          isLoading={isLoading}
+        />
       )}
 
       {/* Delete Confirmation */}

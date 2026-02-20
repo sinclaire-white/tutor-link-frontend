@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from 'next/link';
 import { api } from "@/lib/axios";
 import { useSession } from "@/providers/SessionProvider";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 
 interface Tutor {
   id: string;
@@ -48,20 +50,32 @@ export default function AdminTutorsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Tutor | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTutors, setTotalTutors] = useState(0);
+
   const { user, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
   const fetchTutors = useCallback(async () => {
     try {
       setIsLoading(true);
-      const { data } = await api.get("/tutors", { params: { perPage: "100" } });
+      const { data } = await api.get("/tutors", { 
+        params: { 
+          page,
+          perPage: 10
+        }
+      });
       setTutors(data.data?.items || []);
+      setTotalPages(data.data?.meta?.totalPages || 1);
+      setTotalTutors(data.data?.meta?.total || 0);
+
     } catch (err: any) {
       toast.error("Failed to load tutors");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -122,8 +136,10 @@ export default function AdminTutorsPage() {
             <CardHeader className="pb-3">
               <div className="flex flex-col gap-2">
                 <div>
-                  <CardTitle className="text-lg truncate">
-                    {tutor.user.name}
+                  <CardTitle className="text-lg truncate hover:underline">
+                    <Link href={`/profile/${tutor.userId}`}>
+                      {tutor.user.name}
+                    </Link>
                   </CardTitle>
                   <p className="text-sm text-muted-foreground truncate">
                     {tutor.user.email}
@@ -211,7 +227,15 @@ export default function AdminTutorsPage() {
         </p>
       )}
 
-      {/* Delete Confirmation */}
+      <div className="mt-8">
+        <PaginationControls
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      </div>
+
+      {/* Delete Confirmation */ }
       <AlertDialog
         open={!!deleteTarget}
         onOpenChange={() => !isDeleting && setDeleteTarget(null)}

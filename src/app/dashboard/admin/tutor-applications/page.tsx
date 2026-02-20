@@ -3,17 +3,20 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { api } from '@/lib/axios';
 import { useSession } from '@/providers/SessionProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, XCircle, Loader2, DollarSign, BookOpen, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Application {
   id: string;
-  user: { name: string; email: string };
+  user: { id: string; name: string; email: string };
   bio: string;
+  hourlyRate: number;
   categories: { id: string; name: string }[];
 }
 
@@ -87,15 +90,48 @@ export default function AdminTutorApplicationsPage() {
           applications.map((app) => (
             <Card key={app.id}>
               <CardHeader>
-                <CardTitle className="text-lg">{app.user.name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{app.user.email}</p>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg hover:underline decoration-primary">
+                      <Link href={`/profile/${app.user.id}`}>
+                        {app.user.name}
+                      </Link>
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">{app.user.email}</p>
+                  </div>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <DollarSign className="h-3 w-3" />
+                    {app.hourlyRate}/hr
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm">{app.bio}</p>
-                <div className="flex gap-2">
+                <div className="space-y-2">
+                   <h4 className="text-sm font-medium flex items-center gap-2">
+                    <User className="h-4 w-4" /> Bio
+                   </h4>
+                   <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md line-clamp-3">
+                     {app.bio || "No bio provided."}
+                   </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" /> Subjects
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {app.categories.map((cat) => (
+                      <Badge key={cat.id} variant="secondary">
+                        {cat.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 flex gap-3">
                   <Button 
                     onClick={() => handleDecision(app.id, true)} 
-                    className="flex-1"
+                    className="flex-1 bg-green-600 hover:bg-green-700"
                     disabled={processingId === app.id}
                   >
                     {processingId === app.id ? (
@@ -105,13 +141,13 @@ export default function AdminTutorApplicationsPage() {
                       </>
                     ) : (
                       <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
+                        <CheckCircle className="mr-2 h-4 w-4" />
                         Approve
                       </>
                     )}
                   </Button>
                   <Button 
-                    variant="destructive" 
+                    variant="destructive"
                     onClick={() => handleDecision(app.id, false)} 
                     className="flex-1"
                     disabled={processingId === app.id}
@@ -123,7 +159,7 @@ export default function AdminTutorApplicationsPage() {
                       </>
                     ) : (
                       <>
-                        <XCircle className="h-4 w-4 mr-2" />
+                        <XCircle className="mr-2 h-4 w-4" />
                         Reject
                       </>
                     )}

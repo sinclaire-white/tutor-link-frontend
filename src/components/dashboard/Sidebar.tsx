@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -14,15 +15,14 @@ import {
   GraduationCap,
   Moon,
   Sun,
-  Shield,
   BookOpen,
+  LogOut,
 } from 'lucide-react';
 import { useSession } from '@/providers/SessionProvider';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { LogoutDialog } from '@/components/auth/LogoutDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { motion } from 'framer-motion';
 
 const navigation = {
   STUDENT: [
@@ -50,7 +50,7 @@ const navigation = {
   ],
 };
 
-export default function Sidebar() {
+export function Sidebar() {
   const pathname = usePathname();
   const { user, isLoading } = useSession();
   const { theme, setTheme } = useTheme();
@@ -67,138 +67,92 @@ export default function Sidebar() {
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
-  const getRoleBadgeColor = () => {
-    switch (userRole) {
-      case 'ADMIN':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'TUTOR':
-        return 'bg-primary/10 text-primary border-primary/20';
-      case 'STUDENT':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
-      default:
-        return 'bg-muted text-muted-foreground border-border';
-    }
-  };
-
-  const getRoleIcon = () => {
-    switch (userRole) {
-      case 'ADMIN':
-        return <Shield className="h-3.5 w-3.5" />;
-      case 'TUTOR':
-        return <GraduationCap className="h-3.5 w-3.5" />;
-      case 'STUDENT':
-        return <BookOpen className="h-3.5 w-3.5" />;
-      default:
-        return null;
-    }
-  };
-
   return (
-    <aside className="w-72 border-r bg-card h-screen sticky top-0 flex flex-col shadow-sm">
+    <div className="flex flex-col h-full bg-background border-r">
       {/* Header with User Info */}
-      <div className="p-6 border-b bg-linear-to-br from-primary/5 via-primary/3 to-background">
-        <Link href="/" className="block mb-4">
-          <h2 className="font-bold text-2xl bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            TutorLink
-          </h2>
-        </Link>
-        
-        <div className="flex items-center gap-3 mt-4">
-          <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-sm">
-            <AvatarImage src={user.image} alt={user.name || 'User'} />
-            <AvatarFallback className="bg-linear-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-              {user.name?.charAt(0).toUpperCase() || 'U'}
+      <div className="h-16 flex items-center px-6 border-b shrink-0">
+         <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+           <div className="relative h-8 w-8">
+             <Image 
+               src="/Gemini_Generated_Image_hj5p24hj5p24hj5p.png" 
+               alt="TutorLink" 
+               fill
+               sizes="32px"
+               className="object-contain"
+             />
+           </div>
+           <span>TutorLink</span>
+         </Link>
+      </div>
+
+      <div className="p-4 shrink-0">
+        <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
+          <Avatar className="h-9 w-9 border-2 border-background">
+            <AvatarImage src={user.image || ''} />
+            <AvatarFallback className="bg-primary/10 text-primary">
+              {user.name?.charAt(0)}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold truncate text-sm">{user.name || 'User'}</p>
-            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${getRoleBadgeColor()} mt-1`}>
-              {getRoleIcon()}
-              <span className="capitalize">{userRole.toLowerCase()}</span>
-            </div>
+          <div className="flex flex-col overflow-hidden">
+             <span className="text-sm font-semibold truncate text-foreground">
+              {user.name}
+             </span>
+             <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-xs text-muted-foreground capitalize truncate">
+                 {userRole.toLowerCase()} Account
+                </span>
+             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-        {items.map((item, index) => {
+      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+        {items?.map((item) => {
           const active = isActive(item.href);
-          return (
-            <motion.div
-              key={item.name}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
+           return (
+            <Link 
+              key={item.href} 
+              href={item.href}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                active
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
             >
-              <Link
-                href={item.href}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-[1.02]'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:scale-[1.01]'
-                }`}
-              >
-                <item.icon className="h-4.5 w-4.5 shrink-0" />
-                <span className="flex-1">{item.name}</span>
-                {active && (
-                  <motion.div
-                    layoutId="activeIndicator"
-                    className="h-1.5 w-1.5 rounded-full bg-primary-foreground"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  />
-                )}
-              </Link>
-            </motion.div>
+              <item.icon className="h-4 w-4" />
+              <span>{item.name}</span>
+            </Link>
           );
         })}
       </nav>
 
-      {/* Footer with Theme Toggle & Logout */}
-      <div className="p-4 border-t bg-muted/30 space-y-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="w-full justify-start gap-3 px-3.5 hover:bg-muted/80 transition-all"
-        >
-          {theme === 'dark' ? (
-            <>
-              <Sun className="h-4 w-4" />
-              <span className="flex-1 text-left">Light Mode</span>
-            </>
-          ) : (
-            <>
-              <Moon className="h-4 w-4" />
-              <span className="flex-1 text-left">Dark Mode</span>
-            </>
-          )}
-        </Button>
-
-        <LogoutDialog
-          trigger={
-            <button className="flex w-full items-center gap-3 px-3.5 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-all hover:scale-[1.01]">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4 shrink-0"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" x2="9" y1="12" y2="12" />
-              </svg>
-              <span className="flex-1 text-left">Sign Out</span>
-            </button>
-          }
-        />
+      {/* Footer Actions */}
+      <div className="p-4 border-t mt-auto space-y-2 shrink-0">
+         <div className="flex items-center justify-between px-2 pb-2">
+             <span className="text-xs font-medium text-muted-foreground">Theme</span>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                >
+                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+            </Button>
+         </div>
+         <div className="pt-2">
+            <LogoutDialog 
+              trigger={
+                <button className="flex w-full items-center gap-3 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors">
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </button>
+              }
+            /> 
+         </div>
       </div>
-    </aside>
+    </div>
   );
 }

@@ -286,7 +286,7 @@ export default function StudentDashboard() {
           <CardContent className="flex-1">
             {topTutors.length > 0 ? (
               <div className="space-y-4">
-                {topTutors.map((tutor, i) => (
+                {topTutors.map((tutor) => (
                   <div key={tutor.name} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
@@ -302,9 +302,11 @@ export default function StudentDashboard() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground italic">
-                You haven&apos;t hired any tutors yet.
-              </p>
+              <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                <p className="text-sm text-muted-foreground italic">
+                  You haven&apos;t hired any tutors yet.
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -314,9 +316,9 @@ export default function StudentDashboard() {
           <CardHeader>
             <CardTitle className="text-base">Favorite Subject</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-center items-center text-center">
+          <CardContent className="flex-1">
             {favoriteSubject ? (
-              <div className="space-y-2">
+              <div className="h-full flex flex-col justify-center items-center text-center space-y-2">
                 <BookOpen className="h-12 w-12 text-blue-500 mx-auto opacity-80" />
                 <h4 className="text-2xl font-bold">{favoriteSubject[0]}</h4>
                 <p className="text-muted-foreground">
@@ -324,8 +326,10 @@ export default function StudentDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground italic">
-                No favorite subject yet.
+              <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                 <div className="text-sm text-muted-foreground italic">
+                  No favorite subject yet.
+                 </div>
               </div>
             )}
           </CardContent>

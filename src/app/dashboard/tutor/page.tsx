@@ -424,7 +424,7 @@ export default function TutorDashboard() {
           <CardContent>
             {returningStudents.length > 0 ? (
                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 {returningStudents.map(([name, count], i) => (
+                 {returningStudents.map(([name, count]) => (
                    <div key={name} className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
                       <div className="flex items-center gap-3">
                          <Avatar className="h-10 w-10 border border-border">

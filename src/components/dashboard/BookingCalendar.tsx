@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button';
 
 interface Booking {
   id: string;
-  scheduledAt?: string;
-  date?: string; // fallback
+  scheduledAt: string;
   tutor?: { name: string };
   student?: { name: string };
   status?: string;
+  // Additional properties mapped from parent component
+  tutorName?: string; 
+  date?: string; // Mapped from scheduledAt
 }
 
 function getMonthDays(year: number, month: number) {
@@ -39,7 +41,7 @@ export default function BookingCalendar({ bookings, year, month }: { bookings?: 
   const byDate = useMemo(() => {
     const map: Record<string, Booking[]> = {};
     (bookings || []).forEach((b) => {
-      // Handle both scheduledAt (db) and date (legacy/mock)
+      // Use scheduledAt as the primary date source, or the mapped date property
       const dateStr = b.scheduledAt || b.date;
       if (!dateStr) return;
       
@@ -48,7 +50,8 @@ export default function BookingCalendar({ bookings, year, month }: { bookings?: 
         map[d] = map[d] || [];
         map[d].push(b);
       } catch (e) {
-        console.warn('Invalid date in booking:', b);
+      
+        console.warn('Invalid date in booking:', b,e);
       }
     });
     return map;
@@ -97,7 +100,7 @@ export default function BookingCalendar({ bookings, year, month }: { bookings?: 
         
         {/* Empty cells for start of month */}
         {paddingDays.map((_, i) => (
-          <div key={`padding-${i}`} className="min-h-[80px] sm:min-h-[100px] border border-transparent rounded-lg p-1 sm:p-2 bg-muted/5 opacity-50" />
+          <div key={`padding-${i}`} className="min-h-20 sm:min-h-25 border border-transparent rounded-lg p-1 sm:p-2 bg-muted/5 opacity-50" />
         ))}
         
         {daysInMonth.map((d) => {
@@ -109,7 +112,7 @@ export default function BookingCalendar({ bookings, year, month }: { bookings?: 
             <div 
               key={dateKey} 
               className={cn(
-                "min-h-[80px] sm:min-h-[100px] border rounded-lg p-1 sm:p-2 flex flex-col transition-all hover:shadow-xs",
+                "min-h-20 sm:min-h-25 border rounded-lg p-1 sm:p-2 flex flex-col transition-all hover:shadow-xs",
                 isToday ? "bg-primary/5 border-primary/30" : "bg-card"
               )}
             >
@@ -120,7 +123,7 @@ export default function BookingCalendar({ bookings, year, month }: { bookings?: 
                 {d.getDate()}
               </div>
               
-              <div className="flex-1 space-y-1 overflow-y-auto max-h-[80px] scrollbar-none">
+              <div className="flex-1 space-y-1 overflow-y-auto max-h-20 sm:max-h-25 scrollbar-none">
                 {list.slice(0, 3).map(b => (
                   <div 
                     key={b.id} 
@@ -130,7 +133,7 @@ export default function BookingCalendar({ bookings, year, month }: { bookings?: 
                     )}
                     title={`${b.tutor?.name || b.student?.name || 'Session'} (${b.status})`}
                   >
-                    <Clock className="w-3 h-3 flex-shrink-0 opacity-70" />
+                    <Clock className="w-3 h-3 shrink-0 opacity-70" />
                     <span className="truncate">
                       {b.scheduledAt ? new Date(b.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
                     </span>

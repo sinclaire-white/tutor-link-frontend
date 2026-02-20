@@ -69,8 +69,8 @@ export function HeroBanner() {
           </div>
 
           {/* Right Side: Image */}
-          <div className="relative lg:h-[500px]">
-            <div className="relative h-[400px] lg:h-full rounded-2xl overflow-hidden shadow-2xl">
+          <div className="relative lg:h-125">
+            <div className="relative h-100 lg:h-full rounded-2xl overflow-hidden shadow-2xl">
               <Image
                 src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1471&q=80"
                 alt="Students learning together"

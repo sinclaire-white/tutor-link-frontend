@@ -17,11 +17,10 @@ import { useCategories } from '@/hooks/useCategories';
 import { Loader2 } from 'lucide-react';
 
 const navLinks = [
-  { label: 'Home', href: '/' },
   { label: 'Tutors', href: '/tutors' },
+  // Categories will be inserted here
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
- 
 ];
 
 export function DesktopNav() {
@@ -31,21 +30,19 @@ export function DesktopNav() {
     <nav className="hidden md:flex flex-1 items-center justify-center">
       <NavigationMenu>
         <NavigationMenuList className="gap-2 lg:gap-4">
-          {navLinks.map((link) => (
-            <NavigationMenuItem key={link.label}>
-              <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                <Link
-                  href={link.href}
-                  className={cn(
-                    "text-sm font-medium transition-colors",
-                    "hover:text-primary data-active:text-primary data-active:font-semibold"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-          ))}
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <Link
+                href="/tutors"
+                className={cn(
+                  "text-sm font-medium transition-colors",
+                  "hover:text-primary data-active:text-primary data-active:font-semibold"
+                )}
+              >
+                Tutors
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
 
           <NavigationMenuItem>
             <NavigationMenuTrigger className={cn(
@@ -97,6 +94,22 @@ export function DesktopNav() {
               </motion.ul>
             </NavigationMenuContent>
           </NavigationMenuItem>
+
+          {navLinks.slice(1).map((link) => (
+            <NavigationMenuItem key={link.label}>
+              <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                <Link
+                  href={link.href}
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    "hover:text-primary data-active:text-primary data-active:font-semibold"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          ))}
         </NavigationMenuList>
       </NavigationMenu>
     </nav>

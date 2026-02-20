@@ -65,6 +65,7 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
   const onSubmit = async (data: SignInForm) => {
     setIsLoading(true);
     try {
+      // Sign in with 'rememberMe'. Backend is configured to set session expiration to 30 days.
       const result = await authClient.signIn.email({
         email: data.email.trim(),
         password: data.password,
@@ -96,21 +97,18 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted/30">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-2 text-center pb-6">
-          <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-            <Mail className="w-7 h-7 text-primary" />
-          </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">
-            Welcome back
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Enter your credentials to access your account
-          </CardDescription>
-        </CardHeader>
+    <div className="w-full max-w-md space-y-8">
+      <div className="text-center">
+        <h2 className="mt-6 text-3xl font-bold tracking-tight">
+          Welcome back
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Sign in to your account
+        </p>
+      </div>
 
-        <CardContent className="space-y-6">
+      <div className="bg-card text-card-foreground shadow-sm border rounded-xl p-6 space-y-6">
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Email Field */}
             <div className="space-y-2">
@@ -261,8 +259,7 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
               Create one
             </Link>
           </p>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -11,12 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Calendar, Clock, User, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import BookingCalendar from '@/components/dashboard/BookingCalendar';
+import Link from 'next/link';
 
 interface Booking {
   id: string;
   status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'ONGOING';
   scheduledAt: string;
-  tutor: { name: string; email: string; image?: string };
+  tutor: { id: string; name: string; email: string; image?: string };
   category: { name: string };
   review?: { rating: number; comment?: string };
 }
@@ -34,6 +35,7 @@ const statusColors = {
   CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100',
   COMPLETED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100',
   CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
+  ONGOING: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100',
 };
 
 export default function StudentBookingsPage() {
@@ -48,6 +50,7 @@ export default function StudentBookingsPage() {
       const { data } = await api.get('/bookings/my-bookings');
       setBookings(data.data || []);
     } catch (err) {
+      console.error('Failed to fetch bookings:', err);
       toast.error('Failed to load bookings');
     } finally {
       setIsLoading(false);
@@ -132,7 +135,9 @@ export default function StudentBookingsPage() {
                       
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{booking.tutor.name}</span>
+                        <Link href={`/profile/${booking.tutor.id}`}>
+                          <span className="font-medium hover:underline hover:text-primary cursor-pointer">{booking.tutor.name}</span>
+                        </Link>
                       </div>
                       
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -177,7 +182,9 @@ export default function StudentBookingsPage() {
                       
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{booking.tutor.name}</span>
+                        <Link href={`/profile/${booking.tutor.id}`}>
+                          <span className="font-medium hover:underline hover:text-primary cursor-pointer">{booking.tutor.name}</span>
+                        </Link>
                       </div>
                       
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -230,7 +237,9 @@ export default function StudentBookingsPage() {
                       
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{booking.tutor.name}</span>
+                        <Link href={`/profile/${booking.tutor.id}`}>
+                            <span className="font-medium hover:underline hover:text-primary cursor-pointer">{booking.tutor.name}</span>
+                        </Link>
                       </div>
                       
                       <div className="text-sm text-muted-foreground">

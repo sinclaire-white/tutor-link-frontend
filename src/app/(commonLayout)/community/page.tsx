@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function CommunityPage() {
   return (
-    <div className="container mx-auto px-4 py-12 text-center max-w-4xl">
+    <div className="container mx-auto px-4 py-12 text-center max-w-4xl min-h-[calc(100vh-200px)] flex flex-col justify-center">
       <h1 className="text-4xl font-bold mb-6">Tutor Community</h1>
       <p className="text-xl text-muted-foreground mb-12">
         A place for our thousands of tutors to connect, share tips, and grow together.

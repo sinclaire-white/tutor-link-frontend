@@ -31,6 +31,7 @@ interface BookingDialogProps {
     userId: string;
     user: { name: string };
     hourlyRate: number;
+    categories?: { id: string; name?: string }[];
   };
   slot: AvailabilitySlot | null;
 }

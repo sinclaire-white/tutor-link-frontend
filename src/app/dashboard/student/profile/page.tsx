@@ -14,7 +14,6 @@ import { Loader2, Edit, Save, X, User, Mail, Phone, Calendar, Check } from 'luci
 import { toast } from 'sonner';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
 
 interface ProfileData {
   name: string;
@@ -169,7 +168,7 @@ export default function StudentProfilePage() {
                 className="space-y-6"
               >
                 {/* Profile Image Display */}
-                <div className="flex items-center gap-6 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-6 p-4">
                   <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
                     <AvatarImage src={profile?.image} alt={profile?.name} />
                     <AvatarFallback className="text-2xl">

@@ -1,29 +1,37 @@
-import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
-import Sidebar from '@/components/dashboard/Sidebar';
+import { Sidebar } from '@/components/dashboard/Sidebar';
+import { MobileSidebar } from '@/components/dashboard/MobileSidebar';
 
 export const metadata = {
   title: 'Dashboard',
+  description: 'Manage your learning journey',
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b bg-card sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link 
-            href="/" 
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-        </div>
-      </div>
-      <div className="container mx-auto py-8 flex gap-6">
+    <div className="flex h-screen bg-muted/20 overflow-hidden">
+      {/* Sidebar - Desktop (Hidden on Mobile) */}
+      <aside className="hidden md:flex w-64 flex-col border-r bg-background shrink-0 h-full fixed inset-y-0 z-50">
         <Sidebar />
-        <main className="flex-1">{children}</main>
-      </div>
+      </aside>
+
+      {/* spacer for fixed sidebar */}
+      <div className="hidden md:block w-64 shrink-0" />
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden h-full relative">
+        {/* Mobile Header (Visible only on Mobile) */}
+        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-background shrink-0 sticky top-0 z-40 shadow-sm">
+           <span className="font-bold text-lg text-primary">TutorLink</span>
+           <MobileSidebar />
+        </header>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto w-full p-4 md:p-8 space-y-6 scroll-smooth">
+            <div className="max-w-7xl mx-auto w-full pb-20 md:pb-8">
+              {children}
+            </div>
+        </div>
+      </main>
     </div>
   );
 }

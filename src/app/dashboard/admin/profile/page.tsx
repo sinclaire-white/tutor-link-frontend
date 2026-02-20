@@ -172,7 +172,7 @@ export default function AdminProfilePage() {
                 className="space-y-6"
               >
                 {/* Profile Image Display */}
-                <div className="flex items-center gap-6 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-6 p-4">
                   <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
                     <AvatarImage src={profile?.image} alt={profile?.name} />
                     <AvatarFallback className="text-2xl bg-linear-to-br from-primary/20 to-primary/10">

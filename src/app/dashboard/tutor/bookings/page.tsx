@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from 'next/link';
 import { useSession } from "@/providers/SessionProvider";
 import { api } from "@/lib/axios";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,7 +24,7 @@ interface Booking {
   id: string;
   status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "ONGOING";
   scheduledAt: string;
-  student: { name: string; email: string; image?: string };
+  student: { id: string; name: string; email: string; image?: string };
   category: { name: string };
 }
 
@@ -40,6 +41,7 @@ const statusLabels = {
   CONFIRMED: "Confirmed",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
+  ONGOING: "Ongoing",
 };
 
 const statusColors = {
@@ -49,6 +51,7 @@ const statusColors = {
     "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
   COMPLETED: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
   CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
+  ONGOING: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100",
 };
 
 export default function TutorBookingsPage() {
@@ -167,9 +170,11 @@ export default function TutorBookingsPage() {
 
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          {booking.student.name}
-                        </span>
+                        <Link href={`/profile/${booking.student.id}`}>
+                          <span className="font-medium hover:underline hover:text-primary cursor-pointer">
+                            {booking.student.name}
+                          </span>
+                        </Link>
                       </div>
 
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -245,9 +250,11 @@ export default function TutorBookingsPage() {
 
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          {booking.student.name}
-                        </span>
+                        <Link href={`/profile/${booking.student.id}`}>
+                          <span className="font-medium hover:underline hover:text-primary cursor-pointer">
+                            {booking.student.name}
+                          </span>
+                        </Link>
                       </div>
 
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -302,7 +309,9 @@ export default function TutorBookingsPage() {
 
                   <div className="flex items-center gap-2 mb-1">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{booking.student.name}</span>
+                    <Link href={`/profile/${booking.student.id}`}>
+                      <span className="font-medium hover:underline hover:text-primary cursor-pointer">{booking.student.name}</span>
+                    </Link>
                   </div>
 
                   <div className="text-sm text-muted-foreground">
