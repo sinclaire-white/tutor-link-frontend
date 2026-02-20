@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,9 +8,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 export function ThemeToggle() {
   const { setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  // If theme hasn't resolved yet (during hydration), show placeholder
-  if (!resolvedTheme) {
+  useEffect(() => setMounted(true), []);
+
+  // Render the same placeholder on both server and client until mounted
+  if (!mounted) {
     return (
       <Button variant="ghost" size="icon" className="rounded-full" disabled>
         <div className="h-5 w-5 animate-pulse bg-muted rounded-full" />
