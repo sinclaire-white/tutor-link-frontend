@@ -6,9 +6,10 @@ import { api } from "@/lib/axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, DollarSign, Star } from "lucide-react";
+import { Loader2, DollarSign, Star, Search, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { Input } from "@/components/ui/input";
 
 interface Tutor {
   id: string;
@@ -27,6 +28,7 @@ export default function PublicTutorsPage() {
     [],
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -47,9 +49,9 @@ export default function PublicTutorsPage() {
     fetchData();
   }, []);
 
-  const filteredTutors = selectedCategory
-    ? tutors.filter((t) => t.categories.some((c) => c.id === selectedCategory))
-    : tutors;
+  const filteredTutors = tutors
+    .filter((t) => !selectedCategory || t.categories.some((c) => c.id === selectedCategory))
+    .filter((t) => !searchQuery || t.user.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const getReviewCount = (tutor: Tutor) => {
     return (
@@ -68,6 +70,25 @@ export default function PublicTutorsPage() {
         ) : (
           <>
             <h1 className="text-3xl font-bold mb-8">Our Tutors</h1>
+
+            {/* Search Bar */}
+            <div className="relative mb-6 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name..."
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
 
             {/* Category Filter */}
             <div className="flex flex-wrap gap-2 mb-8">

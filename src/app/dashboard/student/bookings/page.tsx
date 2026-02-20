@@ -8,6 +8,16 @@ import { api } from '@/lib/axios';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Loader2, Calendar, Clock, User, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import BookingCalendar from '@/components/dashboard/BookingCalendar';
@@ -41,6 +51,8 @@ const statusColors = {
 export default function StudentBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [confirmBookingId, setConfirmBookingId] = useState<string | null>(null);
   const { user, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
@@ -70,13 +82,18 @@ export default function StudentBookingsPage() {
     fetchBookings();
   }, [user, sessionLoading, router, fetchBookings]);
 
-  const handleCancel = async (bookingId: string) => {
+  const handleCancel = async () => {
+    if (!confirmBookingId) return;
+    setCancellingId(confirmBookingId);
+    setConfirmBookingId(null);
     try {
-      await api.patch(`/bookings/${bookingId}/status`, { status: 'CANCELLED' });
+      await api.patch(`/bookings/${confirmBookingId}/status`, { status: 'CANCELLED' });
       toast.success('Booking cancelled');
       fetchBookings();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to cancel');
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -97,6 +114,27 @@ export default function StudentBookingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Confirm Cancel Dialog */}
+      <AlertDialog open={!!confirmBookingId} onOpenChange={(open) => !open && setConfirmBookingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this booking? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, Cancel It
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">My Bookings</h1>
         <Button asChild>
@@ -202,9 +240,12 @@ export default function StudentBookingsPage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleCancel(booking.id)}
+                      disabled={cancellingId === booking.id}
+                      onClick={() => setConfirmBookingId(booking.id)}
                     >
-                      Cancel
+                      {cancellingId === booking.id ? (
+                        <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Cancelling...</>
+                      ) : 'Cancel'}
                     </Button>
                   </div>
                 </CardContent>
