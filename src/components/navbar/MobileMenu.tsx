@@ -1,4 +1,3 @@
-// components/navbar/MobileMenu.tsx
 'use client';
 
 import { useState } from 'react';

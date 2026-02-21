@@ -1,4 +1,3 @@
-// src/components/dashboard/admin/categories/index.ts
 export { CategoryForm } from './CategoryForm';
 export { CategoryCard } from './CategoryCard';
 export { CategoryGrid } from './CategoryGrid';

@@ -1,4 +1,3 @@
-// app/dashboard/admin/tutor-applications/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -20,7 +19,6 @@ interface Application {
   categories: { id: string; name: string }[];
 }
 
-// Consistent loading component
 function LoadingState() {
   return (
     <div className="flex items-center justify-center min-h-100">

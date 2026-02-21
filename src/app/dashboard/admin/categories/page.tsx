@@ -1,4 +1,3 @@
-// app/dashboard/admin/categories/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
 import { useSession } from '@/providers/SessionProvider';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react'; // Add this
+import { Loader2 } from 'lucide-react';
 import {
   CategoryForm,
   CategoryGrid,
@@ -20,7 +19,6 @@ interface Category {
   description?: string;
 }
 
-// Simple loading component
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center min-h-100">
@@ -31,22 +29,22 @@ function LoadingSpinner() {
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true); // Add this
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
   const [deleteCategory, setDeleteCategory] = useState<Category | null>(null);
   
-  const { user, isLoading: sessionLoading } = useSession(); // Rename to avoid conflict
+  const { user, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
   const fetchCategories = async () => {
-    setIsCategoriesLoading(true); // Start loading
+    setIsCategoriesLoading(true);
     try {
       const { data } = await api.get('/categories');
       setCategories(data.data || []);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
-      setIsCategoriesLoading(false); // Stop loading
+      setIsCategoriesLoading(false);
     }
   };
 

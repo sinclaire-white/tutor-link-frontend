@@ -1,4 +1,3 @@
-// src/app/(commonLayout)/guidelines/page.tsx
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

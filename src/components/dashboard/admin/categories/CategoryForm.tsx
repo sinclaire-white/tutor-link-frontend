@@ -1,4 +1,3 @@
-// src/components/dashboard/admin/categories/CategoryForm.tsx
 'use client';
 
 import { useState } from 'react';

@@ -1,4 +1,3 @@
-// components/ui/ImageUpload.tsx
 "use client";
 
 import { useState, useRef } from "react";

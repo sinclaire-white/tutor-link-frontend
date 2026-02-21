@@ -1,4 +1,3 @@
-// src/app/(commonLayout)/faq/page.tsx
 import {
   Accordion,
   AccordionContent,

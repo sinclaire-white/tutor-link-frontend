@@ -1,4 +1,3 @@
-// app/sign-in/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,13 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 
 
@@ -65,7 +57,6 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
   const onSubmit = async (data: SignInForm) => {
     setIsLoading(true);
     try {
-      // Sign in with 'rememberMe'. Backend is configured to set session expiration to 30 days.
       const result = await authClient.signIn.email({
         email: data.email.trim(),
         password: data.password,

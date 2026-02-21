@@ -1,4 +1,3 @@
-// src/components/dashboard/admin/categories/DeleteCategoryDialog.tsx
 'use client';
 
 import { useState } from 'react';

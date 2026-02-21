@@ -1,4 +1,3 @@
-// components/navbar/DesktopNav.tsx
 'use client';
 
 import Link from 'next/link';
@@ -18,7 +17,6 @@ import { Loader2 } from 'lucide-react';
 
 const navLinks = [
   { label: 'Tutors', href: '/tutors' },
-  // Categories will be inserted here
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];

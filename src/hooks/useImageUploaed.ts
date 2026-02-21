@@ -1,4 +1,3 @@
-// hooks/useImageUpload.ts
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/lib/axios';
@@ -35,7 +34,6 @@ export function useImageUpload() {
     setProgress(0);
 
     try {
-      // Get signature from your backend (requires auth)
       const { signature, timestamp, cloudName, apiKey } = await getSignature();
 
       // Upload to Cloudinary with signature

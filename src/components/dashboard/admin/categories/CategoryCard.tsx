@@ -1,4 +1,3 @@
-// src/components/dashboard/admin/categories/CategoryCard.tsx
 'use client';
 
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

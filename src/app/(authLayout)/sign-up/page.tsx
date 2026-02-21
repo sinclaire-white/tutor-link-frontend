@@ -1,4 +1,3 @@
-// app/sign-up/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -12,13 +11,6 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Mail, Lock, User, Loader2 } from "lucide-react";
 
 const signUpSchema = z.object({
@@ -56,7 +48,6 @@ export default function SignUpPage() {
       });
 
       if (result.error) {
-        // Handle user already exists
         if (result.error.message?.toLowerCase().includes("already exists")) {
           toast.error("An account with this email already exists");
           return;
@@ -65,7 +56,6 @@ export default function SignUpPage() {
         return;
       }
 
-      // Success - redirect to sign in
       toast.success("Account created successfully! Please sign in.");
       router.push("/sign-in");
       

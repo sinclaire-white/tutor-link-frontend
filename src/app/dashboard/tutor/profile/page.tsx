@@ -1,4 +1,3 @@
-// app/dashboard/tutor/profile/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -17,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 
 
-// Updated interface to match API response structure
 interface TutorProfileData {
   name: string;
   email: string;

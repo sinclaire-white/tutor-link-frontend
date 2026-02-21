@@ -1,4 +1,3 @@
-// src/components/dashboard/admin/categories/CategoryGrid.tsx
 'use client';
 
 import { CategoryCard } from './CategoryCard';

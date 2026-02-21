@@ -1,4 +1,3 @@
-// app/dashboard/tutor/bookings/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";

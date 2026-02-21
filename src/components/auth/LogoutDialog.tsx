@@ -1,4 +1,3 @@
-// components/auth/LogoutDialog.tsx
 'use client';
 
 import { useState } from 'react';
@@ -23,7 +22,7 @@ interface LogoutDialogProps {
   variant?: 'default' | 'destructive' | 'ghost' | 'outline';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
-  onLogout?: () => void; // Optional callback for additional cleanup
+  onLogout?: () => void;
 }
 
 export function LogoutDialog({

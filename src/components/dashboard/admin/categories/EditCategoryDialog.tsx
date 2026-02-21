@@ -1,4 +1,3 @@
-// src/components/dashboard/admin/categories/EditCategoryDialog.tsx
 'use client';
 
 import { useState, useEffect } from 'react';

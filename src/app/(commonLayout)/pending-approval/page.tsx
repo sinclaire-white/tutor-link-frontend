@@ -1,4 +1,3 @@
-// app/pending-approval/page.tsx
 export default function PendingApprovalPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">

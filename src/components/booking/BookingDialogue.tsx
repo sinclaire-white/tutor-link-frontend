@@ -1,4 +1,3 @@
-// components/booking/BookingDialog.tsx
 'use client';
 
 import { useState } from 'react';

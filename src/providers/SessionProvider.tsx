@@ -24,7 +24,7 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const pathname = usePathname(); // Get current route
+  const pathname = usePathname();
 
   const refetchSession = async () => {
     try {
