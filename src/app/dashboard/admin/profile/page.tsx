@@ -145,7 +145,7 @@ export default function AdminProfilePage() {
       </div>
       
       <Card className="overflow-hidden">
-        <CardHeader className="bg-linear-to-r from-primary/10 via-primary/5 to-background">
+        <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
@@ -174,7 +174,7 @@ export default function AdminProfilePage() {
                 <div className="flex items-center gap-6 p-4">
                   <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
                     <AvatarImage src={profile?.image} alt={profile?.name} />
-                    <AvatarFallback className="text-2xl bg-linear-to-br from-primary/20 to-primary/10">
+                    <AvatarFallback className="text-2xl">
                       {profile?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>

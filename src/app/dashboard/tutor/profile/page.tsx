@@ -10,13 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, DollarSign, Trash2, Plus, Clock, Pencil, GraduationCap, BookOpen, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2, DollarSign, Trash2, Plus, Clock, Edit, Save, X, GraduationCap, BookOpen, User } from "lucide-react";
 import { toast } from "sonner";
 import { useCategories } from "@/hooks/useCategories";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 
 
 interface TutorProfileData {
@@ -184,29 +184,36 @@ export default function TutorProfilePage() {
           >
             {/* Header Card */}
             <Card className="overflow-hidden">
-              <div className="h-24 bg-linear-to-r from-emerald-500 to-teal-600" />
-              <CardContent className="pt-0 pb-6">
-                <div className="flex items-end justify-between -mt-10 mb-4">
-                  {profile?.image ? (
-                    <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-background shadow-md shrink-0">
-                      <Image src={profile.image} alt={profile?.name || ""} fill sizes="80px" className="object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-20 h-20 rounded-full border-4 border-background shadow-md bg-primary/10 flex items-center justify-center shrink-0">
-                      <span className="text-2xl font-bold text-primary">{profile?.name?.charAt(0).toUpperCase()}</span>
-                    </div>
-                  )}
-                  <Button onClick={() => setIsEditing(true)} size="sm" variant="outline" className="gap-2">
-                    <Pencil className="h-3.5 w-3.5" /> Edit Profile
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Profile Information
+                  </CardTitle>
+                  <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Profile
                   </Button>
                 </div>
-                <h2 className="text-2xl font-bold">{profile?.name}</h2>
-                <p className="text-muted-foreground text-sm">{profile?.email}</p>
-                {profile?.tutor?.hourlyRate && (
-                  <div className="flex items-center gap-1 mt-2 text-sm font-semibold text-primary">
-                    <DollarSign className="h-4 w-4" />{profile.tutor.hourlyRate}/hour
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-6 p-4">
+                  <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                    <AvatarImage src={profile?.image} alt={profile?.name} />
+                    <AvatarFallback className="text-2xl">
+                      {profile?.name?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-2xl font-bold">{profile?.name}</h3>
+                    <p className="text-muted-foreground">Tutor Account</p>
+                    {profile?.tutor?.hourlyRate && (
+                      <div className="flex items-center gap-1 mt-1 text-sm font-semibold text-primary">
+                        <DollarSign className="h-4 w-4" />{profile.tutor.hourlyRate}/hour
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
 
@@ -442,10 +449,15 @@ export default function TutorProfilePage() {
                   </div>
 
                   <div className="flex gap-3 pt-4">
-                    <Button type="submit" disabled={isSaving} className="gap-2">
-                      {isSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : "Save Changes"}
+                    <Button type="submit" disabled={isSaving} className="flex-1">
+                      {isSaving ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
+                      ) : (
+                        <><Save className="h-4 w-4 mr-2" />Save Changes</>
+                      )}
                     </Button>
                     <Button type="button" variant="outline" onClick={handleCancelEdit} disabled={isSaving}>
+                      <X className="h-4 w-4 mr-2" />
                       Cancel
                     </Button>
                   </div>

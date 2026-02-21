@@ -247,7 +247,7 @@ const redirectUrl = searchParams.get("redirect") || "/dashboard";
           <p className="text-center text-sm text-muted-foreground pt-2">
             Don&apos;t have an account?{" "}
             <Link
-              href="/sign-up"
+              href={redirectUrl !== "/dashboard" ? `/sign-up?redirect=${encodeURIComponent(redirectUrl)}` : "/sign-up"}
               className="text-primary font-semibold hover:underline"
             >
               Create one

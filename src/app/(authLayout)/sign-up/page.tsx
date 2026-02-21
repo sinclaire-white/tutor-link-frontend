@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,6 +27,8 @@ type SignUpForm = z.infer<typeof signUpSchema>;
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect") || "";
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -57,7 +59,7 @@ export default function SignUpPage() {
       }
 
       toast.success("Account created successfully! Please sign in.");
-      router.push("/sign-in");
+      router.push(redirectUrl ? `/sign-in?redirect=${encodeURIComponent(redirectUrl)}` : "/sign-in");
       
     } catch (error) {
       console.error("Sign-up error:", error);
@@ -236,7 +238,7 @@ export default function SignUpPage() {
           <p className="text-center text-sm text-muted-foreground pt-2">
             Already have an account?{" "}
             <Link
-              href="/sign-in"
+              href={redirectUrl ? `/sign-in?redirect=${encodeURIComponent(redirectUrl)}` : "/sign-in"}
               className="text-primary font-semibold hover:underline"
             >
               Sign in

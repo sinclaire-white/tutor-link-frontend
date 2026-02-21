@@ -83,12 +83,12 @@ export default function BecomeTutorPage() {
         const result = await authClient.getSession();
         const sessionData = result?.data;
         if (!sessionData?.user) {
-          router.push("/sign-in");
+          router.push("/sign-in?redirect=/become-tutor");
           return;
         }
         setUser(sessionData.user);
       } catch {
-        router.push("/sign-in");
+        router.push("/sign-in?redirect=/become-tutor");
       } finally {
         setLoading(false);
       }
@@ -325,7 +325,7 @@ export default function BecomeTutorPage() {
                         type="time"
                         value={slot.startTime}
                         onChange={(e) => updateAvailability(index, 'startTime', e.target.value)}
-                        className="w-24 px-2 py-1 text-sm"
+                        className="w-36 px-2 py-1 text-sm"
                       />
                       
                       <span className="text-muted-foreground">to</span>
@@ -334,7 +334,7 @@ export default function BecomeTutorPage() {
                         type="time"
                         value={slot.endTime}
                         onChange={(e) => updateAvailability(index, 'endTime', e.target.value)}
-                        className="w-24 px-2 py-1 text-sm"
+                        className="w-36 px-2 py-1 text-sm"
                       />
                       
                       {availabilities.length > 1 && (
