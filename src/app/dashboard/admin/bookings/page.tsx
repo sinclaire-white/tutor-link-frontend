@@ -64,6 +64,7 @@ export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isFetching, setIsFetching] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -71,6 +72,7 @@ export default function AdminBookingsPage() {
   const router = useRouter();
 
   const fetchBookings = useCallback(async () => {
+    setIsFetching(true);
     try {
       const { data } = await api.get('/bookings', { params: { page, perPage: 12 } });
       setBookings(data.data?.items || []);
@@ -79,6 +81,8 @@ export default function AdminBookingsPage() {
       setTotalPages(Math.ceil(total / perPage) || 1);
     } catch (err: any) {
       toast.error('Failed to load bookings');
+    } finally {
+      setIsFetching(false);
     }
   }, [page]);
 
@@ -133,7 +137,11 @@ export default function AdminBookingsPage() {
 
       <h1 className="text-3xl font-bold">Bookings</h1>
 
-      {bookings.length === 0 ? (
+      {isFetching ? (
+        <div className="flex items-center justify-center py-32">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : bookings.length === 0 ? (
         <p className="text-muted-foreground text-center py-8">No bookings found</p>
       ) : (
         <>

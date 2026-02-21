@@ -21,7 +21,7 @@ interface Application {
 
 function LoadingState() {
   return (
-    <div className="flex items-center justify-center min-h-100">
+    <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
       <Loader2 className="h-12 w-12 animate-spin text-primary" />
     </div>
   );
@@ -79,7 +79,14 @@ export default function AdminTutorApplicationsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Tutor Applications</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-3xl font-bold">Tutor Applications</h1>
+        {applications.length > 0 && (
+          <span className="inline-flex items-center justify-center rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 text-sm font-semibold px-3 py-1">
+            {applications.length} pending
+          </span>
+        )}
+      </div>
 
       <div className="space-y-4">
         {applications.length === 0 ? (

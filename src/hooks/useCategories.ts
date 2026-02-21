@@ -5,6 +5,7 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
+  _count?: { bookings: number };
 }
 
 export function useCategories() {

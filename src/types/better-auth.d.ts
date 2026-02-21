@@ -1,4 +1,4 @@
-import type { SignUpEmailInput } from "better-auth/client";
+
 
 declare module "better-auth/client" {
   interface SignUpEmailInput {

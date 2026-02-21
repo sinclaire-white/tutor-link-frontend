@@ -40,16 +40,16 @@ export function Categories() {
             <Link
               key={category.id}
               href={`/categories/${category.id}`}
-              className="group"
+              className="group h-full"
             >
-              <Card className="p-6 text-center transition-all duration-200 hover:shadow-lg hover:border-primary/50 hover:-translate-y-1">
-                <div className="mb-3 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              <Card className="p-6 text-center transition-all duration-200 hover:shadow-lg hover:border-primary/50 hover:-translate-y-1 h-full flex flex-col">
+                <div className="mb-3 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
                   <BookOpen className="h-6 w-6" />
                 </div>
                 <h3 className="font-semibold text-sm mb-1 line-clamp-1">
                   {category.name}
                 </h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">
+                <p className="text-xs text-muted-foreground line-clamp-2 flex-1">
                   {category.description || 'Find expert tutors'}
                 </p>
               </Card>
