@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useSession } from '@/providers/SessionProvider';
 import { api } from '@/lib/axios';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Calendar, Clock, User, Star } from 'lucide-react';
+import { Loader2, Calendar, Clock, BookOpen, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import BookingCalendar from '@/components/dashboard/BookingCalendar';
 import Link from 'next/link';
@@ -26,6 +27,7 @@ interface Booking {
   id: string;
   status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'ONGOING';
   scheduledAt: string;
+  duration: number;
   tutor: { id: string; name: string; email: string; image?: string };
   category: { name: string };
   review?: { rating: number; comment?: string };
@@ -39,13 +41,109 @@ function LoadingState() {
   );
 }
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100',
   CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100',
   COMPLETED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100',
   CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
   ONGOING: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100',
 };
+
+const statusLabels: Record<string, string> = {
+  PENDING: 'Pending',
+  CONFIRMED: 'Confirmed',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+  ONGOING: 'Ongoing',
+};
+
+function formatTimeRange(scheduledAt: string, duration: number) {
+  const start = new Date(scheduledAt);
+  const end = new Date(start.getTime() + (duration || 1) * 3600000);
+  const fmt = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  return `${fmt(start)} to ${fmt(end)}`;
+}
+
+interface BookingCardProps {
+  booking: Booking;
+  onCancel?: (id: string) => void;
+  cancellingId?: string | null;
+}
+
+function BookingCard({ booking, onCancel, cancellingId }: BookingCardProps) {
+  const { tutor, status, scheduledAt, duration, category, review } = booking;
+  return (
+    <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {tutor.image ? (
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0">
+                <Image src={tutor.image} alt={tutor.name} fill sizes="48px" className="object-cover" />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary shrink-0">
+                {tutor.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <Link href={`/profile/${tutor.id}`}>
+                <p className="font-semibold hover:underline hover:text-primary truncate">{tutor.name}</p>
+              </Link>
+              <p className="text-xs text-muted-foreground truncate">{tutor.email}</p>
+            </div>
+          </div>
+          <Badge className={`shrink-0 text-xs ${statusColors[status]}`}>{statusLabels[status]}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 flex-1 flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <BookOpen className="h-3.5 w-3.5 shrink-0" />
+          <span>{category.name}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          <span>{new Date(scheduledAt).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          <span>{formatTimeRange(scheduledAt, duration)} &middot; {duration}h</span>
+        </div>
+        <div className="mt-auto pt-3 flex items-center justify-between">
+          {status === 'COMPLETED' && review && (
+            <div className="flex items-center gap-1 text-yellow-500 text-sm">
+              <Star className="h-3.5 w-3.5 fill-current" />
+              <span className="font-medium">{review.rating}/5</span>
+              <span className="text-muted-foreground">&mdash; Reviewed</span>
+            </div>
+          )}
+          {status === 'COMPLETED' && !review && (
+            <Button size="sm" asChild>
+              <Link href={`/dashboard/student/reviews/new?bookingId=${booking.id}`}>
+                <Star className="h-3.5 w-3.5 mr-1" />
+                Leave Review
+              </Link>
+            </Button>
+          )}
+          <div className="ml-auto">
+            {['PENDING', 'CONFIRMED'].includes(status) && onCancel && (
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={cancellingId === booking.id}
+                onClick={() => onCancel(booking.id)}
+              >
+                {cancellingId === booking.id
+                  ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />Cancelling...</>
+                  : 'Cancel'}
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function StudentBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -149,163 +247,53 @@ export default function StudentBookingsPage() {
         </CardContent>
       </Card>
 
-      {/* Upcoming Sessions (Confirmed) */}
+      {/* Pending Requests */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">
+          Pending Requests
+          {pending.length > 0 && (
+            <span className="ml-2 text-yellow-600 dark:text-yellow-400">({pending.length})</span>
+          )}
+        </h2>
+        {pending.length === 0 ? (
+          <p className="text-muted-foreground">No pending requests.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {pending.map((booking) => (
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                onCancel={(id) => setConfirmBookingId(id)}
+                cancellingId={cancellingId}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Upcoming Sessions */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Upcoming Sessions</h2>
         {upcoming.length === 0 ? (
           <p className="text-muted-foreground">No upcoming confirmed sessions.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {upcoming.map((booking) => (
-              <Card key={booking.id} className="border-l-4 border-l-green-500">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                       <div className="flex items-center gap-2">
-                        <Badge className={statusColors[booking.status]}>
-                          {booking.status}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {booking.category.name}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <Link href={`/profile/${booking.tutor.id}`}>
-                          <span className="font-medium hover:underline hover:text-primary cursor-pointer">{booking.tutor.name}</span>
-                        </Link>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(booking.scheduledAt).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <BookingCard key={booking.id} booking={booking} />
             ))}
           </div>
         )}
       </section>
 
-      {/* Pending Requests */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Pending Requests</h2>
-        {pending.length === 0 ? (
-          <p className="text-muted-foreground">No pending requests.</p>
-        ) : (
-          <div className="space-y-3">
-            {pending.map((booking) => (
-              <Card key={booking.id} className="border-l-4 border-l-yellow-500">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge className={statusColors[booking.status]}>
-                          {booking.status}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {booking.category.name}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <Link href={`/profile/${booking.tutor.id}`}>
-                          <span className="font-medium hover:underline hover:text-primary cursor-pointer">{booking.tutor.name}</span>
-                        </Link>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                         <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(booking.scheduledAt).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={cancellingId === booking.id}
-                      onClick={() => setConfirmBookingId(booking.id)}
-                    >
-                      {cancellingId === booking.id ? (
-                        <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Cancelling...</>
-                      ) : 'Cancel'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Past Bookings */}
+      {/* History */}
       <section>
         <h2 className="text-xl font-semibold mb-4">History</h2>
         {past.length === 0 ? (
-          <p className="text-muted-foreground">No past bookings</p>
+          <p className="text-muted-foreground">No past bookings.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {past.map((booking) => (
-              <Card key={booking.id} className="opacity-75">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge className={statusColors[booking.status]}>
-                          {booking.status}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {booking.category.name}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <Link href={`/profile/${booking.tutor.id}`}>
-                            <span className="font-medium hover:underline hover:text-primary cursor-pointer">{booking.tutor.name}</span>
-                        </Link>
-                      </div>
-                      
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(booking.scheduledAt).toLocaleDateString()} at{' '}
-                        {new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                    
-                    {booking.status === 'COMPLETED' && !booking.review && (
-                      <Button size="sm" asChild>
-                        <Link href={`/dashboard/student/reviews/new?bookingId=${booking.id}`}>
-                          <Star className="h-4 w-4 mr-1" />
-                          Review
-                        </Link>
-                      </Button>
-                    )}
-                    
-                    {booking.review && (
-                      <div className="flex items-center gap-1 text-yellow-500">
-                        <Star className="h-4 w-4 fill-current" />
-                        {booking.review.rating}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <BookingCard key={booking.id} booking={booking} />
             ))}
           </div>
         )}

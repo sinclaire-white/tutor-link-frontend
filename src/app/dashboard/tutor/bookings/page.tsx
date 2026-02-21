@@ -2,27 +2,29 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from 'next/link';
+import Image from "next/image";
+import Link from "next/link";
 import { useSession } from "@/providers/SessionProvider";
 import { api } from "@/lib/axios";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Loader2,
   Calendar,
   Clock,
-  User,
+  BookOpen,
   CheckCircle,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import BookingCalendar from '@/components/dashboard/BookingCalendar';
+import BookingCalendar from "@/components/dashboard/BookingCalendar";
 
 interface Booking {
   id: string;
   status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "ONGOING";
   scheduledAt: string;
+  duration: number;
   student: { id: string; name: string; email: string; image?: string };
   category: { name: string };
 }
@@ -35,15 +37,7 @@ function LoadingState() {
   );
 }
 
-const statusLabels = {
-  PENDING: "Pending Approval",
-  CONFIRMED: "Confirmed",
-  COMPLETED: "Completed",
-  CANCELLED: "Cancelled",
-  ONGOING: "Ongoing",
-};
-
-const statusColors = {
+const statusColors: Record<string, string> = {
   PENDING:
     "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
   CONFIRMED:
@@ -52,6 +46,93 @@ const statusColors = {
   CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
   ONGOING: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100",
 };
+
+const statusLabels: Record<string, string> = {
+  PENDING: "Pending Approval",
+  CONFIRMED: "Confirmed",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+  ONGOING: "Ongoing",
+};
+
+function formatTimeRange(scheduledAt: string, duration: number) {
+  const start = new Date(scheduledAt);
+  const end = new Date(start.getTime() + (duration || 1) * 3600000);
+  const fmt = (d: Date) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return `${fmt(start)} to ${fmt(end)}`;
+}
+
+interface BookingCardProps {
+  booking: Booking;
+  processingId: string | null;
+  onStatusUpdate?: (id: string, status: "CONFIRMED" | "CANCELLED") => void;
+  onComplete?: (id: string) => void;
+}
+
+function BookingCard({ booking, processingId, onStatusUpdate, onComplete }: BookingCardProps) {
+  const { student, status, scheduledAt, duration, category } = booking;
+  const isProcessing = processingId === booking.id;
+  return (
+    <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {student.image ? (
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0">
+                <Image src={student.image} alt={student.name} fill sizes="48px" className="object-cover" />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary shrink-0">
+                {student.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <Link href={`/profile/${student.id}`}>
+                <p className="font-semibold hover:underline hover:text-primary truncate">{student.name}</p>
+              </Link>
+              <p className="text-xs text-muted-foreground truncate">{student.email}</p>
+            </div>
+          </div>
+          <Badge className={`shrink-0 text-xs ${statusColors[status]}`}>{statusLabels[status]}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 flex-1 flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <BookOpen className="h-3.5 w-3.5 shrink-0" />
+          <span>{category.name}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          <span>{new Date(scheduledAt).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          <span>{formatTimeRange(scheduledAt, duration)} &middot; {duration}h</span>
+        </div>
+        <div className="mt-auto pt-3 flex justify-end gap-2">
+          {status === "PENDING" && onStatusUpdate && (
+            <>
+              <Button size="sm" onClick={() => onStatusUpdate(booking.id, "CONFIRMED")} disabled={isProcessing}>
+                {isProcessing ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5 mr-1" />}
+                Accept
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => onStatusUpdate(booking.id, "CANCELLED")} disabled={isProcessing}>
+                <XCircle className="h-3.5 w-3.5 mr-1" />
+                Reject
+              </Button>
+            </>
+          )}
+          {["CONFIRMED", "ONGOING"].includes(status) && onComplete && (
+            <Button size="sm" variant="outline" onClick={() => onComplete(booking.id)} disabled={isProcessing}>
+              {isProcessing ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : null}
+              Mark Complete
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function TutorBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -136,7 +217,7 @@ export default function TutorBookingsPage() {
       <h1 className="text-3xl font-bold">Bookings</h1>
 
        {/* Calendar View */}
-       <Card>
+      <Card>
         <CardContent className="p-6">
           <h2 className="text-xl font-semibold mb-4">Teaching Schedule</h2>
           <BookingCalendar bookings={calendarEvents} />
@@ -149,74 +230,14 @@ export default function TutorBookingsPage() {
           <h2 className="text-xl font-semibold mb-4 text-yellow-600 dark:text-yellow-400">
             Pending Requests ({pending.length})
           </h2>
-          <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {pending.map((booking) => (
-              <Card
+              <BookingCard
                 key={booking.id}
-                className="border-yellow-200 dark:border-yellow-800"
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge className={statusColors[booking.status]}>
-                          {booking.status}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {booking.category.name}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <Link href={`/profile/${booking.student.id}`}>
-                          <span className="font-medium hover:underline hover:text-primary cursor-pointer">
-                            {booking.student.name}
-                          </span>
-                        </Link>
-                      </div>
-
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(booking.scheduledAt).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {new Date(booking.scheduledAt).toLocaleTimeString(
-                            [],
-                            { hour: "2-digit", minute: "2-digit" },
-                          )}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          handleStatusUpdate(booking.id, "CONFIRMED")
-                        }
-                        disabled={processingId === booking.id}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Accept
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() =>
-                          handleStatusUpdate(booking.id, "CANCELLED")
-                        }
-                        disabled={processingId === booking.id}
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                booking={booking}
+                processingId={processingId}
+                onStatusUpdate={handleStatusUpdate}
+              />
             ))}
           </div>
         </section>
@@ -232,56 +253,14 @@ export default function TutorBookingsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {upcoming.map((booking) => (
-              <Card key={booking.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge className={statusColors[booking.status]}>
-                          {booking.status}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {booking.category.name}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <Link href={`/profile/${booking.student.id}`}>
-                          <span className="font-medium hover:underline hover:text-primary cursor-pointer">
-                            {booking.student.name}
-                          </span>
-                        </Link>
-                      </div>
-
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(booking.scheduledAt).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {new Date(booking.scheduledAt).toLocaleTimeString(
-                            [],
-                            { hour: "2-digit", minute: "2-digit" },
-                          )}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleComplete(booking.id)}
-                      disabled={processingId === booking.id}
-                    >
-                      Mark Complete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                processingId={processingId}
+                onComplete={handleComplete}
+              />
             ))}
           </div>
         )}
@@ -293,35 +272,13 @@ export default function TutorBookingsPage() {
         {past.length === 0 ? (
           <p className="text-muted-foreground">No past bookings</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {past.map((booking) => (
-              <Card key={booking.id} className="opacity-75">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge className={statusColors[booking.status]}>
-                      {statusLabels[booking.status]}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {booking.category.name}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 mb-1">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <Link href={`/profile/${booking.student.id}`}>
-                      <span className="font-medium hover:underline hover:text-primary cursor-pointer">{booking.student.name}</span>
-                    </Link>
-                  </div>
-
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(booking.scheduledAt).toLocaleDateString()} at{" "}
-                    {new Date(booking.scheduledAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                processingId={processingId}
+              />
             ))}
           </div>
         )}
